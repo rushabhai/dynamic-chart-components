@@ -47,7 +47,7 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
       opacity: 0.8
     };
     
-    onDataChange([singleDataset]);
+    onDataChange([singleDataset]); 
   };
 
   const addDataPoint = () => {
