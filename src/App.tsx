@@ -4,7 +4,7 @@ import ChartEditor from './components/ChartEditor';
 import CodeGenerator from './components/CodeGenerator';
 import ThemeToggle from './components/ThemeToggle';
 import { ThemeProvider } from './context/ThemeContext';
-import { ChartData, LineChartData, ChartType, ChartConfig } from './types/ChartTypes';
+import { ChartData, LineChartData, ChartType, ChartConfig } from '@whysorush-/chart-component/src';
 import { BarChart3, TrendingUp, Settings, Code } from 'lucide-react';
 
 // Initial sample data

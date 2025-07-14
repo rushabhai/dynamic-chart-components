@@ -9,6 +9,16 @@ export interface LineChartData {
   y: number;
 }
 
+export interface Dataset {
+  id: string;
+  label: string;
+  data: LineChartData[];
+  color: string;
+  visible: boolean;
+  strokeWidth?: number;
+  opacity?: number;
+}
+
 export interface ChartConfig {
   width?: number;
   height?: number;
@@ -32,6 +42,8 @@ export interface ChartConfig {
   fontSize?: number;
   borderRadius?: number;
   strokeWidth?: number;
+  barBackgroundColor?: string;
+  showBarBackground?: boolean;
 }
 
 export type ChartType = 'line' | 'bar' | 'area' | 'pie' | 'donut';

@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { ChartConfig, ChartType, ChartData, LineChartData } from '../types/ChartTypes';
-import { Palette, Settings, Plus, Trash2, RotateCcw } from 'lucide-react';
+import { Plus, Palette, Settings, RotateCcw, Trash2, Layers } from 'lucide-react';
+import { ChartData, LineChartData, Dataset, ChartConfig, ChartType } from '../types/ChartTypes';
+import { useTheme } from '../context/ThemeContext';
+import DatasetManager from './DatasetManager';
 
 interface ChartEditorProps {
   type: ChartType;
-  data: ChartData[] | LineChartData[];
+  data: ChartData[] | LineChartData[] | Dataset[];
   config: ChartConfig;
   onTypeChange: (type: ChartType) => void;
-  onDataChange: (data: ChartData[] | LineChartData[]) => void;
+  onDataChange: (data: ChartData[] | LineChartData[] | Dataset[]) => void;
   onConfigChange: (config: ChartConfig) => void;
 }
 
@@ -20,6 +22,7 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
   onConfigChange
 }) => {
   const [activeTab, setActiveTab] = useState<'data' | 'style' | 'settings'>('data');
+  const { isDark } = useTheme();
 
   const chartTypes: { value: ChartType; label: string }[] = [
     { value: 'bar', label: 'Bar Chart' },
@@ -29,14 +32,34 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
     { value: 'donut', label: 'Donut Chart' }
   ];
 
+  const isMultiDataset = (type === 'line' || type === 'area') && Array.isArray(data) && data.length > 0 && 'id' in data[0];
+
+  const convertToDatasets = () => {
+    if (type !== 'line' && type !== 'area') return;
+    
+    const singleDataset: Dataset = {
+      id: '1',
+      label: 'Dataset 1',
+      data: data as LineChartData[],
+      color: config.colors?.[0] || '#3B82F6',
+      visible: true,
+      strokeWidth: config.strokeWidth || 2,
+      opacity: 0.8
+    };
+    
+    onDataChange([singleDataset]);
+  };
+
   const addDataPoint = () => {
     if (type === 'line' || type === 'area') {
-      const lineData = data as LineChartData[];
-      const newPoint: LineChartData = {
-        x: `Point ${lineData.length + 1}`,
-        y: Math.floor(Math.random() * 100)
-      };
-      onDataChange([...lineData, newPoint]);
+      if (!isMultiDataset) {
+        const lineData = data as LineChartData[];
+        const newPoint: LineChartData = {
+          x: `Point ${lineData.length + 1}`,
+          y: Math.floor(Math.random() * 100)
+        };
+        onDataChange([...lineData, newPoint]);
+      }
     } else {
       const chartData = data as ChartData[];
       const newPoint: ChartData = {
@@ -174,55 +197,79 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
       <div className="p-6">
         {activeTab === 'data' && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 font-['Figtree']">
-                Data Points
-              </h4>
-              <div className="flex gap-2">
-                <button
-                  onClick={generateRandomData}
-                  className="px-3 py-1.5 text-sm bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors font-['Figtree']"
-                >
-                  Generate Random
-                </button>
-                <button
-                  onClick={addDataPoint}
-                  className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors font-['Figtree']"
-                >
-                  <Plus size={14} />
-                  Add Point
-                </button>
-              </div>
-            </div>
+            {/* Multi-Dataset Manager for Line/Area Charts */}
+            {(type === 'line' || type === 'area') && isMultiDataset && (
+              <DatasetManager
+                datasets={data as Dataset[]}
+                onDatasetsChange={onDataChange}
+                config={config}
+                chartType={type}
+              />
+            )}
 
-            <div className="space-y-3 max-h-64 overflow-y-auto">
-              {data.map((item, index) => (
-                <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  <div className="flex-1 grid grid-cols-2 gap-3">
-                    <input
-                      type="text"
-                      value={type === 'line' || type === 'area' ? (item as LineChartData).x : (item as ChartData).label}
-                      onChange={(e) => updateDataPoint(index, type === 'line' || type === 'area' ? 'x' : 'label', e.target.value)}
-                      placeholder="Label"
-                      className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-['Figtree']"
-                    />
-                    <input
-                      type="number"
-                      value={type === 'line' || type === 'area' ? (item as LineChartData).y : (item as ChartData).value}
-                      onChange={(e) => updateDataPoint(index, type === 'line' || type === 'area' ? 'y' : 'value', e.target.value)}
-                      placeholder="Value"
-                      className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-['Figtree']"
-                    />
+            {/* Single Dataset or Non-Line/Area Charts */}
+            {(!isMultiDataset || (type !== 'line' && type !== 'area')) && (
+              <>
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 font-['Figtree']">
+                    Data Points
+                  </h4>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={generateRandomData}
+                      className="px-3 py-1.5 text-sm bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors font-['Figtree']"
+                    >
+                      Generate Random
+                    </button>
+                    <button
+                      onClick={addDataPoint}
+                      className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors font-['Figtree']"
+                    >
+                      <Plus size={14} />
+                      Add Point
+                    </button>
+                    {(type === 'line' || type === 'area') && (
+                      <button
+                        onClick={convertToDatasets}
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-['Figtree']"
+                      >
+                        <Layers size={14} />
+                        Enable Multi-Dataset
+                      </button>
+                    )}
                   </div>
-                  <button
-                    onClick={() => removeDataPoint(index)}
-                    className="p-2 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                  >
-                    <Trash2 size={16} />
-                  </button>
                 </div>
-              ))}
-            </div>
+
+                <div className="space-y-3 max-h-64 overflow-y-auto">
+                  {data.map((item, index) => (
+                    <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                      <div className="flex-1 grid grid-cols-2 gap-3">
+                        <input
+                          type="text"
+                          value={type === 'line' || type === 'area' ? (item as LineChartData).x : (item as ChartData).label}
+                          onChange={(e) => updateDataPoint(index, type === 'line' || type === 'area' ? 'x' : 'label', e.target.value)}
+                          placeholder="Label"
+                          className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-['Figtree']"
+                        />
+                        <input
+                          type="number"
+                          value={type === 'line' || type === 'area' ? (item as LineChartData).y : (item as ChartData).value}
+                          onChange={(e) => updateDataPoint(index, type === 'line' || type === 'area' ? 'y' : 'value', e.target.value)}
+                          placeholder="Value"
+                          className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-['Figtree']"
+                        />
+                      </div>
+                      <button
+                        onClick={() => removeDataPoint(index)}
+                        className="p-2 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         )}
 
@@ -360,7 +407,7 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
                     value={config.borderRadius || 4}
                     onChange={(e) => onConfigChange({ ...config, borderRadius: parseInt(e.target.value) || 4 })}
                     min="0"
-                    max="20"
+                    max="40"
                     className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-['Figtree']"
                   />
                 </div>
@@ -425,26 +472,137 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
                 Display Options
               </h4>
               <div className="space-y-3">
-                {[
-                  { key: 'showGrid', label: 'Show Grid' },
-                  { key: 'showLegend', label: 'Show Legend' },
-                  { key: 'showTooltip', label: 'Show Tooltip' },
-                  { key: 'animate', label: 'Enable Animation' },
-                  { key: 'gradient', label: 'Use Gradient' }
-                ].map(({ key, label }) => (
-                  <label key={key} className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={(config as any)[key] ?? true}
-                      onChange={(e) => onConfigChange({ ...config, [key]: e.target.checked })}
-                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-700 dark:text-gray-300 font-['Figtree']">Show Grid</span>
+                  <button
+                    onClick={() => onConfigChange({ ...config, showGrid: !config.showGrid })}
+                    className={`w-11 h-6 rounded-full transition-colors ${
+                      config.showGrid ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'
+                    }`}
+                  >
+                    <div
+                      className={`w-4 h-4 rounded-full bg-white transition-transform ${
+                        config.showGrid ? 'translate-x-6' : 'translate-x-1'
+                      }`}
                     />
-                    <span className="text-sm text-gray-700 dark:text-gray-300 font-['Figtree']">
-                      {label}
-                    </span>
-                  </label>
-                ))}
-              </div>
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-700 dark:text-gray-300 font-['Figtree']">Show Legend</span>
+                  <button
+                    onClick={() => onConfigChange({ ...config, showLegend: !config.showLegend })}
+                    className={`w-11 h-6 rounded-full transition-colors ${
+                      config.showLegend ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'
+                    }`}
+                  >
+                    <div
+                      className={`w-4 h-4 rounded-full bg-white transition-transform ${
+                        config.showLegend ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-700 dark:text-gray-300 font-['Figtree']">Show Tooltip</span>
+                  <button
+                    onClick={() => onConfigChange({ ...config, showTooltip: !config.showTooltip })}
+                    className={`w-11 h-6 rounded-full transition-colors ${
+                      config.showTooltip ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'
+                    }`}
+                  >
+                    <div
+                      className={`w-4 h-4 rounded-full bg-white transition-transform ${
+                        config.showTooltip ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-700 dark:text-gray-300 font-['Figtree']">Enable Animation</span>
+                  <button
+                    onClick={() => onConfigChange({ ...config, animate: !config.animate })}
+                    className={`w-11 h-6 rounded-full transition-colors ${
+                      config.animate ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'
+                    }`}
+                  >
+                    <div
+                      className={`w-4 h-4 rounded-full bg-white transition-transform ${
+                        config.animate ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-700 dark:text-gray-300 font-['Figtree']">Use Gradient</span>
+                  <button
+                    onClick={() => onConfigChange({ ...config, gradient: !config.gradient })}
+                    className={`w-11 h-6 rounded-full transition-colors ${
+                      config.gradient ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'
+                    }`}
+                  >
+                    <div
+                      className={`w-4 h-4 rounded-full bg-white transition-transform ${
+                        config.gradient ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {type === 'bar' && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-700 dark:text-gray-300 font-['Figtree']">Show Bar Background</span>
+                    <button
+                      onClick={() => onConfigChange({ ...config, showBarBackground: !config.showBarBackground })}
+                      className={`w-11 h-6 rounded-full transition-colors ${
+                        config.showBarBackground !== false ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'
+                      }`}
+                    >
+                      <div
+                        className={`w-4 h-4 rounded-full bg-white transition-transform ${
+                          config.showBarBackground !== false ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                )}
+
+                {/* Bar Chart Background Color */}
+                {type === 'bar' && config.showBarBackground !== false && (
+                  <div className="mt-4">
+                    <label className="block text-sm text-gray-700 dark:text-gray-300 mb-2 font-['Figtree']">
+                      Bar Background Color
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={config.barBackgroundColor?.replace('rgba(', '#').replace(/,.*/, '') || (isDark ? '#33445B' : '#e5e7eb')}
+                        onChange={(e) => {
+                          const hex = e.target.value;
+                          const rgb = hexToRgba(hex, 0.2);
+                          onConfigChange({
+                            ...config,
+                            barBackgroundColor: rgb
+                          });
+                        }}
+                        className="w-12 h-8 rounded border border-gray-300 dark:border-gray-600"
+                      />
+                      <input
+                        type="text"
+                        value={config.barBackgroundColor || (isDark ? 'rgba(51, 68, 91, 0.2)' : 'rgba(229, 231, 235, 0.2)')}
+                        onChange={(e) => onConfigChange({
+                          ...config,
+                          barBackgroundColor: e.target.value
+                        })}
+                        className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-['Figtree']"
+                      />
+                    </div>
+                  </div>
+                )}
+                </div>
             </div>
           </div>
         )}
