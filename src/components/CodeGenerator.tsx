@@ -18,37 +18,23 @@ const CodeGenerator: React.FC<CodeGeneratorProps> = ({ type, data, config, title
     const configString = JSON.stringify(config, null, 2);
 
     return `import React from 'react';
-import Chart from './components/Chart';
+import { Chart, ChartEditor, ThemeProvider } from '@whysorush/dynamic-chart-component';
 
 const data = ${dataString};
 
 const config = ${configString};
 
-function MyComponent() {
-  const handleDataChange = (newData) => {
-    console.log('Data changed:', newData);
-    // Update your state here
-  };
-
-  const handleConfigChange = (newConfig) => {
-    console.log('Config changed:', newConfig);
-    // Update your configuration here
-  };
-
   return (
+  <ThemeProvider>
     <Chart
       type="${type}"
       data={data}
       config={config}
       title="${title || 'My Chart'}"
-      editable={true}
-      onDataChange={handleDataChange}
-      onConfigChange={handleConfigChange}
     />
+    </ThemeProvider
   );
-}
-
-export default MyComponent;`;
+}`;
   };
 
   const generateVanillaCode = () => {
