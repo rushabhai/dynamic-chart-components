@@ -278,7 +278,7 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
             {/* Gradient Colors */}
             <div>
               <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 font-['Figtree']">
-                Gradient Colors
+                Gradient Colors 
               </h4>
               <div className="grid grid-cols-2 gap-4">
                 <div>
