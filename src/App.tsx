@@ -6,6 +6,7 @@ import ThemeToggle from './components/ThemeToggle';
 import { ThemeProvider } from './context/ThemeContext';
 import { ChartData, LineChartData, ChartType, ChartConfig } from '@whysorush-/chart-component/src';
 import { BarChart3, TrendingUp, Settings, Code } from 'lucide-react';
+import { Dataset } from './types/ChartTypes';
 
 // Initial sample data
 const initialBarData: ChartData[] = [
@@ -76,8 +77,8 @@ function AppContent() {
     }
   };
 
-  const handleDataChange = (newData: ChartData[] | LineChartData[]) => {
-    setChartData(newData);
+  const handleDataChange = (newData: ChartData[] | LineChartData[] | Dataset[]) => {
+    setChartData(newData as ChartData[] | LineChartData[]);
   };
 
   const handleConfigChange = (newConfig: ChartConfig) => {
