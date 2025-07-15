@@ -48,9 +48,15 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
   };
 
   const removeDataPoint = (index: number) => {
-    const newData = [...data];
-    newData.splice(index, 1);
-    onDataChange(newData);
+    if (type === 'line' || type === 'area') {
+      const lineData = [...(data as LineChartData[])];
+      lineData.splice(index, 1);
+      onDataChange(lineData);
+    } else {
+      const chartData = [...(data as ChartData[])];
+      chartData.splice(index, 1);
+      onDataChange(chartData);
+    }
   };
 
   const updateDataPoint = (index: number, field: string, value: any) => {
@@ -60,9 +66,13 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
       (lineData[index] as any)[field] = field === 'y' ? parseFloat(value) || 0 : value;
     } else {
       const chartData = newData as ChartData[];
-      (chartData[index] as any)[field] = field === 'value' ? parseFloat(value) || 0 : value;
+      if (field === 'value') {
+        (chartData[index] as ChartData).value = parseFloat(value) || 0;
+      } else if (field === 'label') {
+        (chartData[index] as ChartData).label = value;
+      }
+      onDataChange(chartData as ChartData[]);
     }
-    onDataChange(newData);
   };
 
   const resetToDefaults = () => {

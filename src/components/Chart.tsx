@@ -10,7 +10,7 @@ const Chart: React.FC<ChartProps> = ({
   title,
   className = '',
   onDataChange,
-  onConfigChange,
+  onConfigChange: _onConfigChange,
   editable = false
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -148,10 +148,10 @@ const Chart: React.FC<ChartProps> = ({
       ctx.setLineDash([2, 2]);
       
       for (let i = 0; i <= 5; i++) {
-        const y = margin.top + (chartHeight / 5) * i;
+        const _y = margin.top + (chartHeight / 5) * i;
         ctx.beginPath();
-        ctx.moveTo(margin.left, y);
-        ctx.lineTo(margin.left + chartWidth, y);
+        ctx.moveTo(margin.left, _y);
+        ctx.lineTo(margin.left + chartWidth, _y);
         ctx.stroke();
       }
       ctx.setLineDash([]);
@@ -170,7 +170,7 @@ const Chart: React.FC<ChartProps> = ({
     ctx.beginPath();
     chartData.forEach((point, index) => {
       const x = margin.left + (index / (chartData.length - 1)) * chartWidth;
-      const y = margin.top + chartHeight - ((point.y - minY + padding) / (maxY - minY + 2 * padding)) * chartHeight;
+      const _y = margin.top + chartHeight - ((point.y - minY + padding) / (maxY - minY + 2 * padding)) * chartHeight;
       
       const animatedY = margin.top + chartHeight - (((point.y - minY + padding) / (maxY - minY + 2 * padding)) * chartHeight * animationProgress);
       
@@ -185,10 +185,10 @@ const Chart: React.FC<ChartProps> = ({
     ctx.fillStyle = defaultConfig.gradient ? createGradient(ctx, 0, margin.top, 0, margin.top + chartHeight) : defaultConfig.colors[0];
     chartData.forEach((point, index) => {
       const x = margin.left + (index / (chartData.length - 1)) * chartWidth;
-      const y = margin.top + chartHeight - (((point.y - minY + padding) / (maxY - minY + 2 * padding)) * chartHeight * animationProgress);
+      const _y = margin.top + chartHeight - (((point.y - minY + padding) / (maxY - minY + 2 * padding)) * chartHeight * animationProgress);
       
       ctx.beginPath();
-      ctx.arc(x, y, 4, 0, 2 * Math.PI);
+      ctx.arc(x, _y, 4, 0, 2 * Math.PI);
       ctx.fill();
     });
 
@@ -219,10 +219,10 @@ const Chart: React.FC<ChartProps> = ({
       ctx.setLineDash([2, 2]);
       
       for (let i = 0; i <= 5; i++) {
-        const y = margin.top + (chartHeight / 5) * i;
+        const _y = margin.top + (chartHeight / 5) * i;
         ctx.beginPath();
-        ctx.moveTo(margin.left, y);
-        ctx.lineTo(margin.left + chartWidth, y);
+        ctx.moveTo(margin.left, _y);
+        ctx.lineTo(margin.left + chartWidth, _y);
         ctx.stroke();
       }
       ctx.setLineDash([]);
@@ -231,10 +231,10 @@ const Chart: React.FC<ChartProps> = ({
     chartData.forEach((item, index) => {
       const x = margin.left + index * (barWidth + barSpacing) + barSpacing / 2;
       const barHeight = (item.value / maxValue) * chartHeight * animationProgress;
-      const y = margin.top + chartHeight - barHeight;
+      const _y = margin.top + chartHeight - barHeight;
 
       if (defaultConfig.gradient) {
-        ctx.fillStyle = createGradient(ctx, 0, y, 0, y + barHeight);
+        ctx.fillStyle = createGradient(ctx, 0, _y, 0, _y + barHeight);
       } else {
         ctx.fillStyle = item.color || defaultConfig.colors[index % defaultConfig.colors.length];
       }
@@ -242,13 +242,13 @@ const Chart: React.FC<ChartProps> = ({
       // Rounded rectangles
       const radius = defaultConfig.borderRadius;
       ctx.beginPath();
-      ctx.roundRect(x, y, barWidth, barHeight, [radius, radius, 0, 0]);
+      ctx.roundRect(x, _y, barWidth, barHeight, [radius, radius, 0, 0]);
       ctx.fill();
 
       ctx.fillStyle = textColor;
       ctx.textAlign = 'center';
       ctx.fillText(item.label, x + barWidth / 2, defaultConfig.height - 10);
-      ctx.fillText(item.value.toString(), x + barWidth / 2, y - 5);
+      ctx.fillText(item.value.toString(), x + barWidth / 2, _y - 5);
     });
   };
 
@@ -267,7 +267,6 @@ const Chart: React.FC<ChartProps> = ({
     const minY = Math.min(...chartData.map(d => d.y));
     const padding = (maxY - minY) * 0.1;
 
-    const gradient = createGradient(ctx, 0, margin.top, 0, margin.top + chartHeight);
     const areaGradient = ctx.createLinearGradient(0, margin.top, 0, margin.top + chartHeight);
     areaGradient.addColorStop(0, defaultConfig.gradientColors!.start.replace('0.85', '0.4'));
     areaGradient.addColorStop(1, defaultConfig.gradientColors!.end.replace('0.85', '0.1'));
@@ -277,13 +276,13 @@ const Chart: React.FC<ChartProps> = ({
     
     chartData.forEach((point, index) => {
       const x = margin.left + (index / (chartData.length - 1)) * chartWidth;
-      const y = margin.top + chartHeight - (((point.y - minY + padding) / (maxY - minY + 2 * padding)) * chartHeight * animationProgress);
+      const _y = margin.top + chartHeight - (((point.y - minY + padding) / (maxY - minY + 2 * padding)) * chartHeight * animationProgress);
       
       if (index === 0) {
         ctx.moveTo(x, margin.top + chartHeight);
-        ctx.lineTo(x, y);
+        ctx.lineTo(x, _y);
       } else {
-        ctx.lineTo(x, y);
+        ctx.lineTo(x, _y);
       }
     });
     
@@ -393,7 +392,7 @@ const Chart: React.FC<ChartProps> = ({
         chartData[index].value = parseFloat(newValue) || 0;
       }
     }
-    onDataChange(newData);
+    // onDataChange(newData);
   };
 
   const startEdit = (index: number, currentValue: string) => {
@@ -464,7 +463,7 @@ const Chart: React.FC<ChartProps> = ({
           </div>
         )}
 
-        {editable && (
+        {editable && (type === 'bar' || type === 'pie' || type === 'donut') && (
           <div className="mt-6 space-y-4">
             <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 font-['Figtree']">
               Edit Data Points
@@ -483,7 +482,6 @@ const Chart: React.FC<ChartProps> = ({
                       <Edit3 size={14} />
                     </button>
                   </div>
-                  
                   {editState.isEditing && editState.editingIndex === index ? (
                     <div className="flex items-center gap-2">
                       <input
