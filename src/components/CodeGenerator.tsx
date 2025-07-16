@@ -28,7 +28,7 @@ const data = ${dataString};
 const config = ${configString};
 
   return (
-  <ThemeProvider theme={${themeString}}>
+  <ThemeProvider>
     <Chart
       type="${type}"
       data={data}
