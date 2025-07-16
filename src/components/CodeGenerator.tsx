@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ChartType, ChartData, LineChartData, ChartConfig } from '../types/ChartTypes';
 import { Copy, Download, Code } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
 
 interface CodeGeneratorProps {
   type: ChartType;
@@ -12,10 +13,12 @@ interface CodeGeneratorProps {
 const CodeGenerator: React.FC<CodeGeneratorProps> = ({ type, data, config, title }) => {
   const [activeTab, setActiveTab] = useState<'react' | 'vanilla' | 'config'>('react');
   const [copied, setCopied] = useState(false);
+  const { isDark } = useTheme();
 
   const generateReactCode = () => {
     const dataString = JSON.stringify(data, null, 2);
     const configString = JSON.stringify(config, null, 2);
+    const themeString = isDark ? '"dark"' : '"light"';
 
     return `import React from 'react';
 import { Chart, ChartEditor, ThemeProvider } from '@whysorush/dynamic-chart-component';
@@ -25,14 +28,14 @@ const data = ${dataString};
 const config = ${configString};
 
   return (
-  <ThemeProvider>
+  <ThemeProvider theme={${themeString}}>
     <Chart
       type="${type}"
       data={data}
       config={config}
       title="${title || 'My Chart'}"
     />
-    </ThemeProvider
+    </ThemeProvider>
   );
 }`;
   };
