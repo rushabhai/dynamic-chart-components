@@ -151,6 +151,33 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
       strokeWidth: 3,
     };
     onConfigChange(defaultConfig);
+
+    // Also reset all data item colors for bar charts to the default color
+    if (type === "bar" || type === "pie" || type === "donut") {
+      const newData = [...(data as ChartData[])];
+      newData.forEach((item, index) => {
+        item.color = defaultConfig.colors?.[index] || "#3B82F6";
+      });
+      onDataChange(newData);
+    }
+  };
+
+  const changeChartColor = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newColor = e.target.value;
+    // Update config colors
+    onConfigChange({
+      ...config,
+      colors: [newColor, ...Array(9).fill(newColor)], // Create array of same color
+    });
+
+    // Update all data item colors for bar charts
+    if (type === "bar") {
+      const newData = [...(data as ChartData[])];
+      newData.forEach((item) => {
+        item.color = newColor;
+      });
+      onDataChange(newData);
+    }
   };
 
   const generateRandomData = () => {
@@ -176,6 +203,8 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
       onDataChange(newData);
     }
   };
+
+ 
 
   const displayData = [
     {
@@ -404,23 +433,7 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
                         <input
                           type="color"
                           value={config.colors?.[0] || "#3B82F6"}
-                          onChange={(e) => {
-                            const newColor = e.target.value;
-                            // Update config colors
-                            onConfigChange({
-                              ...config,
-                              colors: [newColor, ...Array(9).fill(newColor)], // Create array of same color
-                            });
-
-                            // Update all data item colors for bar, pie, donut charts
-                            if (type === "bar") {
-                              const newData = [...(data as ChartData[])];
-                              newData.forEach((item) => {
-                                item.color = newColor;
-                              });
-                              onDataChange(newData);
-                            }
-                          }}
+                          onChange={changeChartColor}
                           className="w-12 h-8 rounded border border-gray-300 dark:border-gray-600 cursor-pointer"
                         />
                         <input
