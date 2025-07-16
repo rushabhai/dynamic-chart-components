@@ -10,7 +10,7 @@ const Chart: React.FC<ChartProps> = ({
   title,
   className = '',
   onDataChange,
-  onConfigChange,
+  // onConfigChange,
   editable = false
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -248,7 +248,7 @@ const Chart: React.FC<ChartProps> = ({
       ctx.beginPath();
       datasetData.forEach((point, index) => {
         const x = margin.left + (index / (datasetData.length - 1)) * chartWidth;
-        const y = margin.top + chartHeight - ((point.y - minY + padding) / (maxY - minY + 2 * padding)) * chartHeight;
+        // const y = margin.top + chartHeight - ((point.y - minY + padding) / (maxY - minY + 2 * padding)) * chartHeight;
         
         const animatedY = margin.top + chartHeight - (((point.y - minY + padding) / (maxY - minY + 2 * padding)) * chartHeight * animationProgress);
         
@@ -463,7 +463,7 @@ const Chart: React.FC<ChartProps> = ({
     chartData.forEach((item, index) => {
       const sliceAngle = (item.value / total) * 2 * Math.PI * animationProgress;
       
-      if (defaultConfig.gradient && index === 0) {
+      if (defaultConfig.gradient) {
         ctx.fillStyle = createGradient(ctx, centerX - radius, centerY - radius, centerX + radius, centerY + radius);
       } else {
         ctx.fillStyle = item.color || defaultConfig.colors[index % defaultConfig.colors.length];
@@ -513,7 +513,7 @@ const Chart: React.FC<ChartProps> = ({
       const startAngle = currentAngle + gapAngle / 2;
       const endAngle = currentAngle + sliceAngle - gapAngle / 2;
 
-      if (defaultConfig.gradient && index === 0) {
+      if (defaultConfig.gradient) {
         ctx.fillStyle = createGradient(ctx, centerX - outerRadius, centerY - outerRadius, centerX + outerRadius, centerY + outerRadius);
       } else {
         ctx.fillStyle = item.color || defaultConfig.colors[index % defaultConfig.colors.length];

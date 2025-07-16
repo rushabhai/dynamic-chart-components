@@ -11,7 +11,7 @@ import {
   Copy, 
   Download,
   Upload,
-  BarChart3,
+  // BarChart3,
   Settings
 } from 'lucide-react';
 
@@ -25,8 +25,8 @@ interface DatasetManagerProps {
 const DatasetManager: React.FC<DatasetManagerProps> = ({
   datasets,
   onDatasetsChange,
-  config,
-  chartType
+  // config,
+  // chartType
 }) => {
   const [selectedDataset, setSelectedDataset] = useState<string>(datasets[0]?.id || '');
   const [editingDataset, setEditingDataset] = useState<string | null>(null);
@@ -245,7 +245,7 @@ const DatasetManager: React.FC<DatasetManagerProps> = ({
 
         {/* Dataset List */}
         <div className="space-y-2">
-          {datasets.map((dataset, index) => (
+          {datasets.map((dataset) => (
             <div
               key={dataset.id}
               className={`p-3 rounded-lg border-2 transition-all ${

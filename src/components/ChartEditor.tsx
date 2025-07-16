@@ -6,7 +6,7 @@ import {
   RotateCcw,
   Trash2,
   Layers,
-  LineChart,
+  // LineChart,
 } from "lucide-react";
 import {
   ChartData,
@@ -150,7 +150,6 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
       borderRadius: 4,
       strokeWidth: 3,
     };
-    generateRandomData();
     onConfigChange(defaultConfig);
   };
 
