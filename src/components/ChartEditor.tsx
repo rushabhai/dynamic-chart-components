@@ -178,6 +178,41 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
     }
   };
 
+  const displayData = [
+    {
+      label: "Show Grid",
+      key: "showGrid",
+      value: config.showGrid,
+      onClick: () => onConfigChange({ ...config, showGrid: !config.showGrid }),
+    },
+    {
+      label: "Show Legend",
+      key: "showLegend",
+      value: config.showLegend,
+      onClick: () =>
+        onConfigChange({ ...config, showLegend: !config.showLegend }),
+    },
+    {
+      label: "Show Tooltip",
+      key: "showTooltip",
+      value: config.showTooltip,
+      onClick: () =>
+        onConfigChange({ ...config, showTooltip: !config.showTooltip }),
+    },
+    {
+      label: "Enable Animation",
+      key: "animate",
+      value: config.animate,
+      onClick: () => onConfigChange({ ...config, animate: !config.animate }),
+    },
+    {
+      label: "Use Gradient",
+      key: "gradient",
+      value: config.gradient,
+      onClick: () => onConfigChange({ ...config, gradient: !config.gradient }),
+    },
+  ];
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
       {/* Header */}
@@ -379,9 +414,7 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
                             });
 
                             // Update all data item colors for bar, pie, donut charts
-                            if (
-                              type === "bar" 
-                            ) {
+                            if (type === "bar") {
                               const newData = [...(data as ChartData[])];
                               newData.forEach((item) => {
                                 item.color = newColor;
@@ -403,9 +436,7 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
                             });
 
                             // Update all data item colors for bar, pie, donut charts
-                            if (
-                              type === "bar" 
-                            ) {
+                            if (type === "bar") {
                               const newData = [...(data as ChartData[])];
                               newData.forEach((item) => {
                                 item.color = newColor;
@@ -664,121 +695,25 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
                 Display Options
               </h4>
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-700 dark:text-gray-300 font-['Figtree']">
-                    Show Grid
-                  </span>
-                  <button
-                    onClick={() =>
-                      onConfigChange({ ...config, showGrid: !config.showGrid })
-                    }
-                    className={`w-11 h-6 rounded-full transition-colors ${
-                      config.showGrid
-                        ? "bg-blue-500"
-                        : "bg-gray-300 dark:bg-gray-600"
-                    }`}
-                  >
-                    <div
-                      className={`w-4 h-4 rounded-full bg-white transition-transform ${
-                        config.showGrid ? "translate-x-6" : "translate-x-1"
+                {displayData.map(({ label, key, value, onClick }) => (
+                  <div className="flex items-center justify-between" key={key}>
+                    <span className="text-sm text-gray-700 dark:text-gray-300 font-['Figtree']">
+                      {label}
+                    </span>
+                    <button
+                      onClick={onClick}
+                      className={`w-11 h-6 rounded-full transition-colors ${
+                        value ? "bg-blue-500" : "bg-gray-300 dark:bg-gray-600"
                       }`}
-                    />
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-700 dark:text-gray-300 font-['Figtree']">
-                    Show Legend
-                  </span>
-                  <button
-                    onClick={() =>
-                      onConfigChange({
-                        ...config,
-                        showLegend: !config.showLegend,
-                      })
-                    }
-                    className={`w-11 h-6 rounded-full transition-colors ${
-                      config.showLegend
-                        ? "bg-blue-500"
-                        : "bg-gray-300 dark:bg-gray-600"
-                    }`}
-                  >
-                    <div
-                      className={`w-4 h-4 rounded-full bg-white transition-transform ${
-                        config.showLegend ? "translate-x-6" : "translate-x-1"
-                      }`}
-                    />
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-700 dark:text-gray-300 font-['Figtree']">
-                    Show Tooltip
-                  </span>
-                  <button
-                    onClick={() =>
-                      onConfigChange({
-                        ...config,
-                        showTooltip: !config.showTooltip,
-                      })
-                    }
-                    className={`w-11 h-6 rounded-full transition-colors ${
-                      config.showTooltip
-                        ? "bg-blue-500"
-                        : "bg-gray-300 dark:bg-gray-600"
-                    }`}
-                  >
-                    <div
-                      className={`w-4 h-4 rounded-full bg-white transition-transform ${
-                        config.showTooltip ? "translate-x-6" : "translate-x-1"
-                      }`}
-                    />
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-700 dark:text-gray-300 font-['Figtree']">
-                    Enable Animation
-                  </span>
-                  <button
-                    onClick={() =>
-                      onConfigChange({ ...config, animate: !config.animate })
-                    }
-                    className={`w-11 h-6 rounded-full transition-colors ${
-                      config.animate
-                        ? "bg-blue-500"
-                        : "bg-gray-300 dark:bg-gray-600"
-                    }`}
-                  >
-                    <div
-                      className={`w-4 h-4 rounded-full bg-white transition-transform ${
-                        config.animate ? "translate-x-6" : "translate-x-1"
-                      }`}
-                    />
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-700 dark:text-gray-300 font-['Figtree']">
-                    Use Gradient
-                  </span>
-                  <button
-                    onClick={() =>
-                      onConfigChange({ ...config, gradient: !config.gradient })
-                    }
-                    className={`w-11 h-6 rounded-full transition-colors ${
-                      config.gradient
-                        ? "bg-blue-500"
-                        : "bg-gray-300 dark:bg-gray-600"
-                    }`}
-                  >
-                    <div
-                      className={`w-4 h-4 rounded-full bg-white transition-transform ${
-                        config.gradient ? "translate-x-6" : "translate-x-1"
-                      }`}
-                    />
-                  </button>
-                </div>
+                    >
+                      <div
+                        className={`w-4 h-4 rounded-full bg-white transition-transform ${
+                          value ? "translate-x-6" : "translate-x-1"
+                        }`}
+                      />
+                    </button>
+                  </div>
+                ))}
 
                 {type === "bar" && (
                   <div className="flex items-center justify-between">
