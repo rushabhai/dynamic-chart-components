@@ -53,6 +53,9 @@ export interface ChartProps {
   data: ChartData[] | LineChartData[];
   config?: ChartConfig;
   title?: string;
+  kpiTitle?: string;
+  filter?: string;
+  summary?: string;
   className?: string;
   onDataChange?: (data: ChartData[] | LineChartData[]) => void;
   onConfigChange?: (config: ChartConfig) => void;
@@ -63,4 +66,16 @@ export interface EditableChartState {
   isEditing: boolean;
   editingIndex: number | null;
   tempValue: string;
+}
+
+export interface ChartSummaryResponse {
+  summary: string;
+  updatedAt?: string;
+  status: 'success' | 'error';
+}
+
+export interface ChartSummaryState {
+  summary: string;
+  isLoading: boolean;
+  error?: string;
 }

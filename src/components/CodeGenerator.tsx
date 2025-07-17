@@ -8,9 +8,12 @@ interface CodeGeneratorProps {
   data: ChartData[] | LineChartData[];
   config: ChartConfig;
   title?: string;
+  kpiTitle?: string;
+  filter?: string;
+  summary?: string;
 }
 
-const CodeGenerator: React.FC<CodeGeneratorProps> = ({ type, data, config, title }) => {
+const CodeGenerator: React.FC<CodeGeneratorProps> = ({ type, data, config, title, kpiTitle, summary, filter }) => {
   const [activeTab, setActiveTab] = useState<'react' | 'vanilla' | 'config'>('react');
   const [copied, setCopied] = useState(false);
   const { isDark } = useTheme();
@@ -34,6 +37,9 @@ const config = ${configString};
       data={data}
       config={config}
       title="${title || 'My Chart'}"
+      kpiTitle="${kpiTitle}"
+      filter="${filter}"
+      summary="${summary}"
     />
     </ThemeProvider>
   );
@@ -66,12 +72,22 @@ const config = ${configString};
             max-width: 100%;
             height: auto;
         }
+        .chart-meta {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="chart-container">
         <h2>${title || 'My Chart'}</h2>
+        <div class="chart-meta">
+          <p>${kpiTitle || ''}</p>
+          <p>${filter || ''}</p>
+        </div>
         <canvas id="chart" width="${config.width || 600}" height="${config.height || 400}"></canvas>
+        <p>${summary || ''}</p>
     </div>
 
     <script>

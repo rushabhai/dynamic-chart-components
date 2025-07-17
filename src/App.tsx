@@ -1,31 +1,36 @@
-import React, { useState } from 'react';
-import Chart from './components/Chart';
-import ChartEditor from './components/ChartEditor';
-import CodeGenerator from './components/CodeGenerator';
-import ThemeToggle from './components/ThemeToggle';
-import { ThemeProvider } from './context/ThemeContext';
-import { ChartData, LineChartData, ChartType, ChartConfig } from './types/ChartTypes';
-import { BarChart3, TrendingUp, Settings, Code } from 'lucide-react';
-import { Dataset } from './types/ChartTypes';
+import React, { useState } from "react";
+import Chart from "./components/Chart";
+import ChartEditor from "./components/ChartEditor";
+import CodeGenerator from "./components/CodeGenerator";
+import ThemeToggle from "./components/ThemeToggle";
+import { ThemeProvider } from "./context/ThemeContext";
+import {
+  ChartData,
+  LineChartData,
+  ChartType,
+  ChartConfig,
+} from "./types/ChartTypes";
+import { BarChart3, TrendingUp, Settings, Code, Plus } from "lucide-react";
+import { Dataset } from "./types/ChartTypes";
 
 // Initial sample data
 const initialBarData: ChartData[] = [
-  { label: 'Jan', value: 65 },
-  { label: 'Feb', value: 59 },
-  { label: 'Mar', value: 80 },
-  { label: 'Apr', value: 81 },
-  { label: 'May', value: 56 },
-  { label: 'Jun', value: 55 }
+  { label: "Jan", value: 65 },
+  { label: "Feb", value: 59 },
+  { label: "Mar", value: 80 },
+  { label: "Apr", value: 81 },
+  { label: "May", value: 56 },
+  { label: "Jun", value: 55 },
 ];
 
 const initialLineData: LineChartData[] = [
-  { x: 'Jan', y: 30 },
-  { x: 'Feb', y: 45 },
-  { x: 'Mar', y: 35 },
-  { x: 'Apr', y: 55 },
-  { x: 'May', y: 40 },
-  { x: 'Jun', y: 60 },
-  { x: 'Jul', y: 50 }
+  { x: "Jan", y: 30 },
+  { x: "Feb", y: 45 },
+  { x: "Mar", y: 35 },
+  { x: "Apr", y: 55 },
+  { x: "May", y: 40 },
+  { x: "Jun", y: 60 },
+  { x: "Jul", y: 50 },
 ];
 
 const initialConfig: ChartConfig = {
@@ -33,12 +38,12 @@ const initialConfig: ChartConfig = {
   height: 400,
   margin: { top: 20, right: 20, bottom: 40, left: 40 },
   colors: [
-    'rgba(0, 201, 255, 0.8)',
-    'rgba(146, 254, 157, 0.8)',
-    'rgba(255, 107, 107, 0.8)',
-    'rgba(255, 206, 84, 0.8)',
-    'rgba(159, 122, 234, 0.8)',
-    'rgba(255, 159, 243, 0.8)'
+    "rgba(0, 201, 255, 0.8)",
+    "rgba(146, 254, 157, 0.8)",
+    "rgba(255, 107, 107, 0.8)",
+    "rgba(255, 206, 84, 0.8)",
+    "rgba(159, 122, 234, 0.8)",
+    "rgba(255, 159, 243, 0.8)",
   ],
   showGrid: true,
   showLegend: true,
@@ -46,44 +51,63 @@ const initialConfig: ChartConfig = {
   animate: true,
   gradient: true,
   gradientColors: {
-    start: 'rgba(0, 201, 255, 0.85)',
-    end: 'rgba(146, 254, 157, 0.85)'
+    start: "rgba(0, 201, 255, 0.85)",
+    end: "rgba(146, 254, 157, 0.85)",
   },
-  fontFamily: 'Figtree',
+  fontFamily: "Figtree",
   fontSize: 14,
   borderRadius: 4,
-  strokeWidth: 3
+  strokeWidth: 3,
 };
 
 function AppContent() {
-  const [chartType, setChartType] = useState<ChartType>('bar');
-  const [chartData, setChartData] = useState<ChartData[] | LineChartData[]>(initialBarData);
+  const [chartType, setChartType] = useState<ChartType>("bar");
+  const [chartData, setChartData] = useState<ChartData[] | LineChartData[]>(
+    initialBarData
+  );
   const [chartConfig, setChartConfig] = useState<ChartConfig>(initialConfig);
-  const [chartTitle, setChartTitle] = useState('Interactive Chart');
-  const [activePanel, setActivePanel] = useState<'editor' | 'code'>('editor');
+  const [chartTitle, setChartTitle] = useState("Interactive Chart");
+  const [kpiTitle, setKpiTitle] = useState("KPI");
+  const [filter, setFilter] = useState("weekly");
+  const [summary, setSummary] = useState<string>(
+    "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+  );
+  const [filterData, setFilterData] = useState<string[]>(["weekly"]);
+  const [activePanel, setActivePanel] = useState<"editor" | "code">("editor");
 
   const handleTypeChange = (newType: ChartType) => {
     setChartType(newType);
-    
+
     // Switch data format based on chart type
-    if (newType === 'line' || newType === 'area') {
-      if (!Array.isArray(chartData) || !('x' in chartData[0])) {
+    if (newType === "line" || newType === "area") {
+      if (!Array.isArray(chartData) || !("x" in chartData[0])) {
         setChartData(initialLineData);
       }
     } else {
-      if (!Array.isArray(chartData) || !('label' in chartData[0])) {
+      if (!Array.isArray(chartData) || !("label" in chartData[0])) {
         setChartData(initialBarData);
       }
     }
   };
 
-  const handleDataChange = (newData: ChartData[] | LineChartData[] | Dataset[]) => {
+  const handleDataChange = (
+    newData: ChartData[] | LineChartData[] | Dataset[]
+  ) => {
     setChartData(newData as ChartData[] | LineChartData[]);
   };
 
   const handleConfigChange = (newConfig: ChartConfig) => {
     setChartConfig(newConfig);
   };
+
+  const addfilterData = () => {
+      const newOption = prompt("Add new filter option:");
+      if (newOption && !filterData.includes(newOption)) {
+        setFilterData([...filterData, newOption]);
+        setFilter(newOption);
+      }
+  };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300">
@@ -117,13 +141,13 @@ function AppContent() {
             Build Beautiful, Interactive Charts
           </h2>
           <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto font-['Figtree']">
-            A fully customizable chart component with real-time editing, dark mode support, 
-            and code generation. Perfect for any React project.
+            A fully customizable chart component with real-time editing, dark
+            mode support, and code generation. Perfect for any React project.
           </p>
         </div>
 
         {/* Chart Title Editor */}
-        <div className="mb-8 flex justify-center">
+        <div className="mb-8 flex gap-4 justify-center">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 font-['Figtree']">
               Chart Title
@@ -136,6 +160,46 @@ function AppContent() {
               placeholder="Enter chart title..."
             />
           </div>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 font-['Figtree']">
+              Component Chart Title
+            </label>
+            <input
+              type="text"
+              value={kpiTitle}
+              onChange={(e) => setKpiTitle(e.target.value)}
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-['Figtree'] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Enter title..."
+            />
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 flex flex-col">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 font-['Figtree']">
+              Filter Options
+            </label>
+            <div className="flex gap-2">
+              <select
+                name="filter"
+                id="filter"
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-['Figtree'] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                {filterData.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={addfilterData}
+                className="px-2 py-1 text-sm bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors font-['Figtree'] flex items-center gap-1"
+                title="Add filter option"
+              >
+                <Plus size={14} />
+                Add
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Main Layout */}
@@ -147,6 +211,9 @@ function AppContent() {
               data={chartData}
               config={chartConfig}
               title={chartTitle}
+              kpiTitle={kpiTitle}
+              filter={filter}
+              summary={summary}
               editable={true}
               onDataChange={handleDataChange}
               onConfigChange={handleConfigChange}
@@ -187,7 +254,7 @@ function AppContent() {
                   </span>
                 </div>
                 <div className="text-lg font-bold text-gray-900 dark:text-gray-100 font-['Figtree']">
-                  {chartConfig.animate ? 'On' : 'Off'}
+                  {chartConfig.animate ? "On" : "Off"}
                 </div>
               </div>
 
@@ -199,7 +266,7 @@ function AppContent() {
                   </span>
                 </div>
                 <div className="text-lg font-bold text-gray-900 dark:text-gray-100 font-['Figtree']">
-                  {chartConfig.gradient ? 'On' : 'Off'}
+                  {chartConfig.gradient ? "On" : "Off"}
                 </div>
               </div>
             </div>
@@ -211,22 +278,22 @@ function AppContent() {
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-1">
               <div className="grid grid-cols-2 gap-1">
                 <button
-                  onClick={() => setActivePanel('editor')}
+                  onClick={() => setActivePanel("editor")}
                   className={`flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors font-['Figtree'] ${
-                    activePanel === 'editor'
-                      ? 'bg-blue-500 text-white'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+                    activePanel === "editor"
+                      ? "bg-blue-500 text-white"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
                   }`}
                 >
                   <Settings size={16} />
                   Editor
                 </button>
                 <button
-                  onClick={() => setActivePanel('code')}
+                  onClick={() => setActivePanel("code")}
                   className={`flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors font-['Figtree'] ${
-                    activePanel === 'code'
-                      ? 'bg-blue-500 text-white'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+                    activePanel === "code"
+                      ? "bg-blue-500 text-white"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
                   }`}
                 >
                   <Code size={16} />
@@ -236,7 +303,7 @@ function AppContent() {
             </div>
 
             {/* Panel Content */}
-            {activePanel === 'editor' ? (
+            {activePanel === "editor" ? (
               <ChartEditor
                 type={chartType}
                 data={chartData}
@@ -251,6 +318,9 @@ function AppContent() {
                 data={chartData}
                 config={chartConfig}
                 title={chartTitle}
+                kpiTitle={kpiTitle}
+                filter={filter}
+                summary={summary}
               />
             )}
           </div>
