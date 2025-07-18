@@ -17,6 +17,7 @@ import {
 } from "../types/ChartTypes";
 import { useTheme } from "../context/ThemeContext";
 import DatasetManager from "./DatasetManager";
+import Chart from "./Chart";
 
 interface ChartEditorProps {
   type: ChartType;
@@ -163,10 +164,13 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
   };
 
   const changeChartColor = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const changeGradient: ChartConfig = {
+      gradient: false,
+    };
     const newColor = e.target.value;
     // Update config colors
     onConfigChange({
-      ...config,
+      ...config, ...changeGradient,
       colors: [newColor, ...Array(9).fill(newColor)], // Create array of same color
     });
 
@@ -203,8 +207,6 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
       onDataChange(newData);
     }
   };
-
- 
 
   const displayData = [
     {

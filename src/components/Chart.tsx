@@ -8,6 +8,7 @@ import {
 } from "../types/ChartTypes";
 import { useTheme } from "../context/ThemeContext";
 import { Edit3, Check, X } from "lucide-react";
+import DataActions from "./DataActions";
 
 const Chart: React.FC<ChartProps> = ({
   type,
@@ -322,7 +323,11 @@ const Chart: React.FC<ChartProps> = ({
       ctx.beginPath();
       datasetData.forEach((point, index) => {
         const x = margin.left + (index / (datasetData.length - 1)) * chartWidth;
-        const y = margin.top + chartHeight - ((point.y - minY + padding) / (maxY - minY + 2 * padding)) * chartHeight;
+        const y =
+          margin.top +
+          chartHeight -
+          ((point.y - minY + padding) / (maxY - minY + 2 * padding)) *
+            chartHeight;
 
         const animatedY =
           margin.top +
@@ -534,7 +539,7 @@ const Chart: React.FC<ChartProps> = ({
       }
 
       ctx.fillStyle = areaGradient;
-      ctx.globalAlpha = (dataset.opacity || 0.8);
+      ctx.globalAlpha = dataset.opacity || 0.8;
       ctx.beginPath();
 
       // Draw area
@@ -965,8 +970,6 @@ const Chart: React.FC<ChartProps> = ({
     setTooltip(null);
   };
 
-  
-
   return (
     <div className={`relative ${className}`} ref={containerRef}>
       {title && (
@@ -977,9 +980,11 @@ const Chart: React.FC<ChartProps> = ({
 
       <div className="bg-white dark:bg-gray-800  rounded-xl shadow-lg p-6 backdrop-blur-sm border border-gray-200 dark:border-gray-700">
         <div className="flex justify-between items-center mb-4">
-        {kpiTitle && (<span className="text-sm font-semibold border px-4 py-2 rounded-lg text-gray-600 dark:text-gray-300 font-['Figtree']">
-          {kpiTitle}
-        </span>)}
+          {kpiTitle && (
+            <span className="text-sm font-semibold border px-4 py-2 rounded-lg text-gray-600 dark:text-gray-300 font-['Figtree']">
+              {kpiTitle}
+            </span>
+          )}
           <span className="text-sm font-semibold border px-4 py-2 rounded-lg text-gray-600 dark:text-gray-300 font-['Figtree']">
             {filter}
           </span>
@@ -993,7 +998,7 @@ const Chart: React.FC<ChartProps> = ({
         <div className="bg-white dark:bg-gray-800 font-semibold  rounded-xl shadow-md p-4 backdrop-blur-sm border border-gray-200 dark:border-gray-700">
           Chart Summary
           <p className="text-sm font-medium text-gray-600  dark:text-gray-300 mt-2 font-['Figtree']">
-           {summary}
+            {summary}
           </p>
         </div>
 
@@ -1014,6 +1019,12 @@ const Chart: React.FC<ChartProps> = ({
             <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 font-['Figtree']">
               Edit Data Points
             </h4>
+            <DataActions
+              type={type}
+              data={data}
+              onDataChange={onDataChange}
+              isMultiDataset={isMultiDataset}
+            />
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {ensureChartData(data).map((item, index) => (
                 <div
