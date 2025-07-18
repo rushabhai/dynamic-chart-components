@@ -10,7 +10,7 @@ import {
   ChartType,
   ChartConfig,
 } from "./types/ChartTypes";
-import { BarChart3, TrendingUp, Settings, Code, Plus } from "lucide-react";
+import { BarChart3, TrendingUp, Settings, Code, Plus, X } from "lucide-react";
 import { Dataset } from "./types/ChartTypes";
 
 // Initial sample data
@@ -72,7 +72,7 @@ function AppContent() {
   const [summary, setSummary] = useState<string>(
     "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
   );
-  const [filterData, setFilterData] = useState<string[]>(["weekly"]);
+  const [filterData, setFilterData] = useState<string[]>(["weekly", "none"]);
   const [activePanel, setActivePanel] = useState<"editor" | "code">("editor");
 
   const handleTypeChange = (newType: ChartType) => {
@@ -101,13 +101,26 @@ function AppContent() {
   };
 
   const addfilterData = () => {
-      const newOption = prompt("Add new filter option:");
-      if (newOption && !filterData.includes(newOption)) {
-        setFilterData([...filterData, newOption]);
-        setFilter(newOption);
-      }
+    const newOption = prompt("Add new filter option:");
+    if (newOption && !filterData.includes(newOption)) {
+      setFilterData([...filterData, newOption]);
+      setFilter(newOption);
+    }
   };
 
+  const removefilterData = (option: string) => {
+    // Remove the option from filterData
+    const newFilterData = filterData.filter((item) => item !== option);
+    setFilterData(newFilterData);
+
+    if (filter === option) {
+      if (newFilterData.length > 0) {
+        setFilter(newFilterData[0]);
+      } else {
+        setFilter("");
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300">
@@ -180,8 +193,11 @@ function AppContent() {
               <select
                 name="filter"
                 id="filter"
-                value={filter}
-                onChange={(e) => setFilter(e.target.value)}
+                value={filter || "none"}
+                onChange={(e) => {
+                  const selected = e.target.value;
+                  setFilter(selected === "none" ? "" : selected);
+                }}
                 className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-['Figtree'] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 {filterData.map((option) => (
@@ -197,6 +213,15 @@ function AppContent() {
               >
                 <Plus size={14} />
                 Add
+              </button>
+              <button
+                onClick={() => removefilterData(filter)}
+                className="px-2 py-1 text-sm bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors font-['Figtree'] flex items-center gap-1"
+                title="Remove current filter"
+                disabled={filterData.length === 0}
+              >
+                <X size={14} />
+                Remove
               </button>
             </div>
           </div>

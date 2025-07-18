@@ -985,9 +985,11 @@ const Chart: React.FC<ChartProps> = ({
               {kpiTitle}
             </span>
           )}
-          <span className="text-sm font-semibold border px-4 py-2 rounded-lg text-gray-600 dark:text-gray-300 font-['Figtree']">
-            {filter}
-          </span>
+          {filter && (
+              <span className="text-sm font-semibold border px-4 py-2 rounded-lg text-gray-600 dark:text-gray-300 font-['Figtree']">
+                {filter}
+              </span>
+          )}
         </div>
         <canvas
           ref={canvasRef}
