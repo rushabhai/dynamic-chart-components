@@ -5,6 +5,7 @@ A dynamic and customizable chart component library built with React and TypeScri
 ## Features
 
 - **Dynamic Chart Rendering:** Easily render different types of charts with customizable data and options.
+  - Can export, paste, copy, import dataset for any Charts.
   - Can add multiple datasets in Line and Area Chart (eg: for comparison).
   - Bar charts with customizable background colors and gradients
   - Donut charts with gaps and customizable rounded corners
@@ -23,6 +24,7 @@ A dynamic and customizable chart component library built with React and TypeScri
   - `ChartEditor.tsx` - UI for editing chart properties.
   - `CodeGenerator.tsx` - Generates code for configured charts.
   - `DatasetManager.tsx` - Manages multiple dataset implementation.
+  - `DataActions.tsx` - Manages export, import, copy, paste executions.
   - `ThemeToggle.tsx` - Toggle between light and dark themes.
 - `src/context/`
   - `ThemeContext.tsx` - Provides theme context for the app.
