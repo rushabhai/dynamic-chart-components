@@ -345,7 +345,17 @@ const Chart: React.FC<ChartProps> = ({
       ctx.stroke();
 
       // Draw points
-      ctx.fillStyle = dataset.color;
+      if (defaultConfig.gradient) {
+        ctx.fillStyle = createGradient(
+          ctx,
+          0,
+          margin.top,
+          0,
+          margin.top + chartHeight
+        );
+      } else {
+        ctx.fillStyle = dataset.color;
+      }
       datasetData.forEach((point, index) => {
         const x = margin.left + (index / (datasetData.length - 1)) * chartWidth;
         const y =
@@ -510,8 +520,34 @@ const Chart: React.FC<ChartProps> = ({
           0,
           margin.top + chartHeight
         );
-        areaGradient.addColorStop(0.2, defaultConfig.gradientColors.start);
-        areaGradient.addColorStop(1, defaultConfig.gradientColors.end);
+
+        // Create lower opacity versions of the gradient colors
+        let startColor, endColor;
+
+        if (defaultConfig.gradientColors.start.startsWith("rgba")) {
+          startColor = defaultConfig.gradientColors.start.replace(
+            /[\d\.]+\)$/g,
+            "0.3)"
+          );
+        } else if (defaultConfig.gradientColors.start.startsWith("#")) {
+          startColor = `${defaultConfig.gradientColors.start}66`; // 40% opacity
+        } else {
+          startColor = defaultConfig.gradientColors.start;
+        }
+
+        if (defaultConfig.gradientColors.end.startsWith("rgba")) {
+          endColor = defaultConfig.gradientColors.end.replace(
+            /[\d\.]+\)$/g,
+            "0.1)"
+          );
+        } else if (defaultConfig.gradientColors.end.startsWith("#")) {
+          endColor = `${defaultConfig.gradientColors.end}1A`; // 10% opacity
+        } else {
+          endColor = defaultConfig.gradientColors.end;
+        }
+
+        areaGradient.addColorStop(0.2, startColor);
+        areaGradient.addColorStop(1, endColor);
       } else {
         areaGradient = ctx.createLinearGradient(
           0,
@@ -601,13 +637,71 @@ const Chart: React.FC<ChartProps> = ({
       const sliceAngle = (item.value / total) * 2 * Math.PI * animationProgress;
 
       if (defaultConfig.gradient) {
-        ctx.fillStyle = createGradient(
-          ctx,
-          centerX + Math.cos(currentAngle) * radius,
-          centerY + Math.sin(currentAngle) * radius,
-          centerX + Math.cos(currentAngle + sliceAngle) * radius,
-          centerY + Math.sin(currentAngle + sliceAngle) * radius
+        // Create individual gradient for each slice
+        const baseColor =
+          item.color ||
+          defaultConfig.colors[index % defaultConfig.colors.length];
+
+        // Create radial gradient for this slice
+        const gradient = ctx.createRadialGradient(
+          centerX,
+          centerY,
+          0, // Inner circle (center)
+          centerX,
+          centerY,
+          radius // Outer circle (edge)
         );
+
+        // Convert the base color to create gradient stops
+        let lightColor, darkColor;
+
+        if (baseColor.startsWith("rgba")) {
+          // Extract RGBA values and create lighter and darker versions
+          const rgbaMatch = baseColor.match(
+            /rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)/
+          );
+          if (rgbaMatch) {
+            const [, r, g, b, a] = rgbaMatch;
+            // Lighter version (closer to center)
+            lightColor = `rgba(${Math.min(255, parseInt(r) + 40)}, ${Math.min(
+              255,
+              parseInt(g) + 40
+            )}, ${Math.min(255, parseInt(b) + 40)}, ${a})`;
+            // Darker version (at the edge)
+            darkColor = `rgba(${Math.max(0, parseInt(r) - 20)}, ${Math.max(
+              0,
+              parseInt(g) - 20
+            )}, ${Math.max(0, parseInt(b) - 20)}, ${a})`;
+          } else {
+            lightColor = baseColor;
+            darkColor = baseColor;
+          }
+        } else if (baseColor.startsWith("#")) {
+          // Handle hex colors
+          const hex = baseColor.replace("#", "");
+          const r = parseInt(hex.slice(0, 2), 16);
+          const g = parseInt(hex.slice(2, 4), 16);
+          const b = parseInt(hex.slice(4, 6), 16);
+
+          lightColor = `rgb(${Math.min(255, r + 40)}, ${Math.min(
+            255,
+            g + 40
+          )}, ${Math.min(255, b + 40)})`;
+          darkColor = `rgb(${Math.max(0, r - 20)}, ${Math.max(
+            0,
+            g - 20
+          )}, ${Math.max(0, b - 20)})`;
+        } else {
+          // Fallback to original color
+          lightColor = baseColor;
+          darkColor = baseColor;
+        }
+
+        gradient.addColorStop(0, lightColor); // Light color at center
+        gradient.addColorStop(0.7, baseColor); // Original color in middle
+        gradient.addColorStop(1, darkColor); // Darker color at edge
+
+        ctx.fillStyle = gradient;
       } else {
         ctx.fillStyle =
           item.color ||
@@ -665,13 +759,71 @@ const Chart: React.FC<ChartProps> = ({
       const endAngle = currentAngle + sliceAngle - gapAngle / 2;
 
       if (defaultConfig.gradient) {
-        ctx.fillStyle = createGradient(
-          ctx,
-          centerX + Math.cos(currentAngle) * outerRadius,
-          centerY + Math.sin(currentAngle) * outerRadius,
-          centerX + Math.cos(currentAngle + sliceAngle) * outerRadius,
-          centerY + Math.sin(currentAngle + sliceAngle) * outerRadius
+        // Create individual gradient for each donut slice
+        const baseColor =
+          item.color ||
+          defaultConfig.colors[index % defaultConfig.colors.length];
+
+        // Create radial gradient for this slice (from inner radius to outer radius)
+        const gradient = ctx.createRadialGradient(
+          centerX,
+          centerY,
+          innerRadius, // Inner circle
+          centerX,
+          centerY,
+          outerRadius // Outer circle
         );
+
+        // Convert the base color to create gradient stops
+        let lightColor, darkColor;
+
+        if (baseColor.startsWith("rgba")) {
+          // Extract RGBA values and create lighter and darker versions
+          const rgbaMatch = baseColor.match(
+            /rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)/
+          );
+          if (rgbaMatch) {
+            const [, r, g, b, a] = rgbaMatch;
+            // Lighter version (closer to inner radius)
+            lightColor = `rgba(${Math.min(255, parseInt(r) + 40)}, ${Math.min(
+              255,
+              parseInt(g) + 40
+            )}, ${Math.min(255, parseInt(b) + 40)}, ${a})`;
+            // Darker version (at the outer edge)
+            darkColor = `rgba(${Math.max(0, parseInt(r) - 20)}, ${Math.max(
+              0,
+              parseInt(g) - 20
+            )}, ${Math.max(0, parseInt(b) - 20)}, ${a})`;
+          } else {
+            lightColor = baseColor;
+            darkColor = baseColor;
+          }
+        } else if (baseColor.startsWith("#")) {
+          // Handle hex colors
+          const hex = baseColor.replace("#", "");
+          const r = parseInt(hex.substr(0, 2), 16);
+          const g = parseInt(hex.substr(2, 2), 16);
+          const b = parseInt(hex.substr(4, 2), 16);
+
+          lightColor = `rgb(${Math.min(255, r + 40)}, ${Math.min(
+            255,
+            g + 40
+          )}, ${Math.min(255, b + 40)})`;
+          darkColor = `rgb(${Math.max(0, r - 20)}, ${Math.max(
+            0,
+            g - 20
+          )}, ${Math.max(0, b - 20)})`;
+        } else {
+          // Fallback to original color
+          lightColor = baseColor;
+          darkColor = baseColor;
+        }
+
+        gradient.addColorStop(0, lightColor); // Light color at inner radius
+        gradient.addColorStop(0.6, baseColor); // Original color in middle
+        gradient.addColorStop(1, darkColor); // Darker color at outer edge
+
+        ctx.fillStyle = gradient;
       } else {
         ctx.fillStyle =
           item.color ||
@@ -986,9 +1138,9 @@ const Chart: React.FC<ChartProps> = ({
             </span>
           )}
           {filter && (
-              <span className="text-sm font-semibold border px-4 py-2 rounded-lg text-gray-600 dark:text-gray-300 font-['Figtree']">
-                {filter}
-              </span>
+            <span className="text-sm font-semibold border px-4 py-2 rounded-lg text-gray-600 dark:text-gray-300 font-['Figtree']">
+              {filter}
+            </span>
           )}
         </div>
         <canvas

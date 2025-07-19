@@ -518,12 +518,7 @@ const DataActions: React.FC<DataActionsProps> = ({
             <textarea
               value={pasteData}
               onChange={(e) => setPasteData(e.target.value)}
-              placeholder={`Example formats:
-name,count
-Product A,100
-Product B,150
-OR
-[{"month":"Jan","sales":200},{"month":"Feb","sales":250}]`}
+              placeholder={`Example formats: [{"month":"Jan","sales":200},{"month":"Feb","sales":250}]`}
               className="w-full h-48 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-['Figtree'] text-sm resize-none"
               autoFocus
             />

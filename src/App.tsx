@@ -72,7 +72,7 @@ function AppContent() {
   const [summary, setSummary] = useState<string>(
     "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
   );
-  const [filterData, setFilterData] = useState<string[]>(["weekly", "none"]);
+  const [filterData, setFilterData] = useState<string[]>(["weekly", "None"]);
   const [activePanel, setActivePanel] = useState<"editor" | "code">("editor");
 
   const handleTypeChange = (newType: ChartType) => {
@@ -113,12 +113,15 @@ function AppContent() {
     const newFilterData = filterData.filter((item) => item !== option);
     setFilterData(newFilterData);
 
+    // if (filter === option) {
+    //   if (newFilterData.length > 0) {
+    //     setFilter(newFilterData[newFilterData.length - 1]);
+    //   } else {
+    //     setFilter("");
+    //   }
+    // }
     if (filter === option) {
-      if (newFilterData.length > 0) {
-        setFilter(newFilterData[0]);
-      } else {
-        setFilter("");
-      }
+      setFilter(""); 
     }
   };
 
@@ -193,10 +196,10 @@ function AppContent() {
               <select
                 name="filter"
                 id="filter"
-                value={filter || "none"}
+                value={filter || "None"}
                 onChange={(e) => {
                   const selected = e.target.value;
-                  setFilter(selected === "none" ? "" : selected);
+                  setFilter(selected === "None" ? "" : selected);
                 }}
                 className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-['Figtree'] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
