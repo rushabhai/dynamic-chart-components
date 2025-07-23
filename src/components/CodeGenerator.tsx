@@ -9,7 +9,7 @@ interface CodeGeneratorProps {
   config: ChartConfig;
   title?: string;
   kpiTitle?: string;
-  filter?: string;
+  filter?: string[];
   summary?: string;
 }
 
@@ -22,6 +22,27 @@ const CodeGenerator: React.FC<CodeGeneratorProps> = ({ type, data, config, title
     const dataString = JSON.stringify(data, null, 2);
     const configString = JSON.stringify(config, null, 2);
     const themeString = isDark ? '"dark"' : '"light"';
+
+    // Only show summary table for bar, pie, donut
+    let summaryTableBlock = '';
+    if (type === 'bar' || type === 'pie' || type === 'donut') {
+      const chartData: ChartData[] = Array.isArray(data) ? (data as ChartData[]).filter(d => typeof d.label === 'string' && typeof d.value === 'number') : [];
+      // Merge repeated labels by summing their values
+      const labelMap = new Map<string, number>();
+      chartData.forEach(item => {
+        if (labelMap.has(item.label)) {
+          labelMap.set(item.label, labelMap.get(item.label)! + item.value);
+        } else {
+          labelMap.set(item.label, item.value);
+        }
+      });
+      let mergedRows = Array.from(labelMap.entries()).map(([label, value]) => ({ label, value }));
+      const total = mergedRows.reduce((sum, d) => sum + d.value, 0);
+      const avg = mergedRows.length ? total / mergedRows.length : 0;
+      // Sort by descending % of Total (i.e., value)
+      mergedRows = mergedRows.sort((a, b) => b.value - a.value);
+      summaryTableBlock = `\n    {/* Chart Summary Table */}\n    <table style={{ minWidth: '100%', fontSize: '0.9em', marginTop: 24 }}><thead><tr><th style={{ padding: '4px 8px' }}>Label</th><th style={{ padding: '4px 8px' }}>Value</th><th style={{ padding: '4px 8px' }}>% of Total</th></tr></thead><tbody>{mergedRows.map((item, idx) => (<tr key={idx}><td style={{ padding: '4px 8px' }}>{item.label}</td><td style={{ padding: '4px 8px' }}>{item.value}</td><td style={{ padding: '4px 8px' }}>{total ? ((item.value / total) * 100).toFixed(1) + '%' : '-'}</td></tr>))}</tbody><tfoot><tr><td style={{ padding: '4px 8px' }}>Total</td><td style={{ padding: '4px 8px' }}>{total}</td><td style={{ padding: '4px 8px' }}>100%</td></tr><tr><td style={{ padding: '4px 8px' }}>Average</td><td style={{ padding: '4px 8px' }}>{avg.toFixed(2)}</td><td style={{ padding: '4px 8px' }}>-</td></tr></tfoot></table>`;
+    }
 
     return `import React from 'react';
 import { Chart, ChartEditor, ThemeProvider } from '@whysorush/dynamic-chart-component';
@@ -40,13 +61,32 @@ const config = ${configString};
       kpiTitle="${kpiTitle}"
       filter="${filter}"
       summary="${summary}"
-    />
-    </ThemeProvider>
-  );
-}`;
+    />${summaryTableBlock}
+  </ThemeProvider>
+  );`;
   };
 
   const generateVanillaCode = () => {
+    // Only show summary table for bar, pie, donut
+    let summaryTable = '';
+    if (type === 'bar' || type === 'pie' || type === 'donut') {
+      const chartData: ChartData[] = Array.isArray(data) ? (data as ChartData[]).filter(d => typeof d.label === 'string' && typeof d.value === 'number') : [];
+      // Merge repeated labels by summing their values
+      const labelMap = new Map<string, number>();
+      chartData.forEach(item => {
+        if (labelMap.has(item.label)) {
+          labelMap.set(item.label, labelMap.get(item.label)! + item.value);
+        } else {
+          labelMap.set(item.label, item.value);
+        }
+      });
+      let mergedRows = Array.from(labelMap.entries()).map(([label, value]) => ({ label, value }));
+      const total = mergedRows.reduce((sum, d) => sum + d.value, 0);
+      const avg = mergedRows.length ? total / mergedRows.length : 0;
+      // Sort by descending % of Total (i.e., value)
+      mergedRows = mergedRows.sort((a, b) => b.value - a.value);
+      summaryTable = `<table style="min-width:100%;font-size:0.9em;margin-top:24px;"><thead><tr><th style="padding:4px 8px;">Label</th><th style="padding:4px 8px;">Value</th><th style="padding:4px 8px;">% of Total</th></tr></thead><tbody>${mergedRows.map(item => `<tr><td style='padding:4px 8px;'>${item.label}</td><td style='padding:4px 8px;'>${item.value}</td><td style='padding:4px 8px;'>${total ? ((item.value / total) * 100).toFixed(1) + '%' : '-'}</td></tr>`).join('')}</tbody><tfoot><tr><td style='padding:4px 8px;'>Total</td><td style='padding:4px 8px;'>${total}</td><td style='padding:4px 8px;'>100%</td></tr><tr><td style='padding:4px 8px;'>Average</td><td style='padding:4px 8px;'>${avg.toFixed(2)}</td><td style='padding:4px 8px;'>-</td></tr></tfoot></table>`;
+    }
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -88,32 +128,29 @@ const config = ${configString};
         </div>
         <canvas id="chart" width="${config.width || 600}" height="${config.height || 400}"></canvas>
         <p>${summary || ''}</p>
+        <div id="summary-table"></div>
     </div>
 
     <script>
         const data = ${JSON.stringify(data, null, 8)};
         const config = ${JSON.stringify(config, null, 8)};
-        
         function drawChart() {
             const canvas = document.getElementById('chart');
             const ctx = canvas.getContext('2d');
-            
-            // Clear canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Set font
-            ctx.font = \`\${config.fontSize || 14}px \${config.fontFamily || 'Figtree'}\`;
-            
+            ctx.font = ((config.fontSize || 14) + "px " + (config.fontFamily || "Figtree"));
             // Your chart drawing logic here
             // This is a simplified example - you'll need to implement the full drawing logic
-            
-            console.log('Chart type: ${type}');
+            console.log('Chart type:', config.type || 'unknown');
             console.log('Data:', data);
             console.log('Config:', config);
         }
-        
-        // Initialize chart
+        function renderSummaryTable() {
+          document.getElementById('summary-table').innerHTML = summaryTable;
+        }
+        // Initial render
         drawChart();
+        renderSummaryTable();
     </script>
 </body>
 </html>`;

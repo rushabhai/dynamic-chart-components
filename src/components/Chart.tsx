@@ -10,13 +10,17 @@ import { useTheme } from "../context/ThemeContext";
 import { Edit3, Check, X } from "lucide-react";
 import DataActions from "./DataActions";
 
-const Chart: React.FC<ChartProps> = ({
+// Add filterData to props
+type ChartPropsWithFilterData = ChartProps & { filterData?: string[] };
+
+const Chart: React.FC<ChartPropsWithFilterData> = ({
   type,
   data,
   config = {},
   title,
   kpiTitle,
   filter,
+  filterData = [],
   summary,
   className = "",
   onDataChange,
@@ -1137,10 +1141,18 @@ const Chart: React.FC<ChartProps> = ({
               {kpiTitle}
             </span>
           )}
-          {filter && (
-            <span className="text-sm font-semibold border px-4 py-2 rounded-lg text-gray-600 dark:text-gray-300 font-['Figtree']">
-              {filter}
-            </span>
+          {/* Render filter dropdown if filterData is provided and has options */}
+          {filterData.length > 0 && (
+            <select
+              className="text-sm font-semibold border px-4 py-2 rounded-lg text-gray-600 dark:text-gray-300 font-['Figtree'] bg-white dark:bg-gray-800"
+              // No value or onChange to keep it uncontrolled
+            >
+              {filterData.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
           )}
         </div>
         <canvas
@@ -1155,7 +1167,151 @@ const Chart: React.FC<ChartProps> = ({
             {summary}
           </p>
         </div>
+        <div className="bg-white dark:bg-gray-800 font-semibold  rounded-xl shadow-md p-4 backdrop-blur-sm border border-gray-200 dark:border-gray-700">
+          {/* Chart Summary Table */}
+          <div className="overflow-x-auto">
+            {(() => {
+              // Helper to render color swatch
+              const ColorSwatch = ({ color }: { color?: string }) => (
+                <span
+                  className="inline-block w-4 h-4 rounded-full border border-gray-300 align-middle mr-2"
+                  style={{ backgroundColor: color || '#ccc' }}
+                  title={color}
+                />
+              );
 
+              // Helper to format numbers
+              const formatNum = (n: number) => n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+
+              // Bar, Pie, Donut: ChartData[]
+              if (type === 'bar' || type === 'pie' || type === 'donut') {
+                let chartData = ensureChartData(data);
+                // Merge repeated labels by summing their values
+                const labelMap = new Map();
+                for (const item of chartData) {
+                  if (labelMap.has(item.label)) {
+                    labelMap.set(item.label, labelMap.get(item.label) + item.value);
+                  } else {
+                    labelMap.set(item.label, item.value);
+                  }
+                }
+                let mergedRows = Array.from(labelMap.entries()).map(([label, value]) => ({ label, value }));
+                const total = mergedRows.reduce((sum, d) => sum + d.value, 0);
+                const avg = mergedRows.length ? total / mergedRows.length : 0;
+                // Sort by descending % of Total (i.e., value)
+                mergedRows = mergedRows.sort((a, b) => b.value - a.value);
+                return (
+                  <table className="min-w-full text-sm text-left">
+                    <thead>
+                      <tr>
+                        <th className="py-1 px-2">Label</th>
+                        <th className="py-1 px-2">Value</th>
+                        <th className="py-1 px-2">% of Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {mergedRows.map((item, idx) => (
+                        <tr key={idx} className="border-t border-gray-200 dark:border-gray-700">
+                          <td className="py-1 px-2">{item.label}</td>
+                          <td className="py-1 px-2">{formatNum(item.value)}</td>
+                          <td className="py-1 px-2">{total ? ((item.value / total) * 100).toFixed(1) + '%' : '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr className="font-bold border-t border-gray-300 dark:border-gray-600">
+                        <td className="py-1 px-2">Total</td>
+                        <td className="py-1 px-2">{formatNum(total)}</td>
+                        <td className="py-1 px-2">100%</td>
+                      </tr>
+                      <tr className="font-bold">
+                        <td className="py-1 px-2">Average</td>
+                        <td className="py-1 px-2">{formatNum(avg)}</td>
+                        <td className="py-1 px-2">-</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                );
+              }
+
+              // Line/Area: Multi-series (Dataset[])
+              const isDatasetArray = (arr: any): arr is Dataset[] => {
+                return Array.isArray(arr) && arr.length > 0 && typeof arr[0] === 'object' && 'id' in arr[0] && 'data' in arr[0];
+              };
+              if ((type === 'line' || type === 'area') && isDatasetArray(data)) {
+                const datasets = data.filter(ds => ds.visible);
+                if (datasets.length === 0) return <div>No data</div>;
+                // Collect all unique x values
+                const xSet = new Set<string | number>();
+                datasets.forEach(ds => ds.data.forEach(pt => xSet.add(pt.x)));
+                const xValues = Array.from(xSet);
+                // Build table rows: one per x, columns for each dataset
+                return (
+                  <table className="min-w-full text-sm text-left">
+                    <thead>
+                      <tr>
+                        <th className="py-1 px-2">X</th>
+                        {datasets.map(ds => (
+                          <th key={ds.id} className="py-1 px-2">
+                            <ColorSwatch color={ds.color} />{ds.label}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {xValues.map((x, rowIdx) => (
+                        <tr key={rowIdx} className="border-t border-gray-200 dark:border-gray-700">
+                          <td className="py-1 px-2">{x}</td>
+                          {datasets.map(ds => {
+                            const pt = ds.data.find(p => p.x === x);
+                            return <td key={ds.id} className="py-1 px-2">{pt ? formatNum(pt.y) : '-'}</td>;
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                );
+              }
+
+              // Line/Area: Single series (LineChartData[])
+              if ((type === 'line' || type === 'area') && Array.isArray(data) && data.length > 0 && !('id' in data[0])) {
+                const lineData = data as LineChartData[];
+                const total = lineData.reduce((sum, d) => sum + d.y, 0);
+                const avg = lineData.length ? total / lineData.length : 0;
+                return (
+                  <table className="min-w-full text-sm text-left">
+                    <thead>
+                      <tr>
+                        <th className="py-1 px-2">X</th>
+                        <th className="py-1 px-2">Y</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {lineData.map((item, idx) => (
+                        <tr key={idx} className="border-t border-gray-200 dark:border-gray-700">
+                          <td className="py-1 px-2">{item.x}</td>
+                          <td className="py-1 px-2">{formatNum(item.y)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr className="font-bold border-t border-gray-300 dark:border-gray-600">
+                        <td className="py-1 px-2">Total</td>
+                        <td className="py-1 px-2">{formatNum(total)}</td>
+                      </tr>
+                      <tr className="font-bold">
+                        <td className="py-1 px-2">Average</td>
+                        <td className="py-1 px-2">{formatNum(avg)}</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                );
+              }
+
+              return <div>No summary table available for this chart type.</div>;
+            })()}
+          </div>
+        </div>
         {tooltip && (
           <div
             className="fixed z-50 bg-gray-900 dark:bg-gray-700 text-white px-3 py-2 rounded-lg shadow-lg text-sm font-['Figtree'] pointer-events-none whitespace-pre-line"

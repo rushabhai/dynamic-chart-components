@@ -68,11 +68,11 @@ function AppContent() {
   const [chartConfig, setChartConfig] = useState<ChartConfig>(initialConfig);
   const [chartTitle, setChartTitle] = useState("Interactive Chart");
   const [kpiTitle, setKpiTitle] = useState("KPI");
-  const [filter, setFilter] = useState("weekly");
+  const [filter, setFilter] = useState("");
   const [summary, setSummary] = useState<string>(
     "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
   );
-  const [filterData, setFilterData] = useState<string[]>(["weekly", "None"]);
+  const [filterData, setFilterData] = useState<string[]>([]);
   const [activePanel, setActivePanel] = useState<"editor" | "code">("editor");
 
   const handleTypeChange = (newType: ChartType) => {
@@ -104,7 +104,7 @@ function AppContent() {
     const newOption = prompt("Add new filter option:");
     if (newOption && !filterData.includes(newOption)) {
       setFilterData([...filterData, newOption]);
-      setFilter(newOption);
+      // Do not setFilter(newOption); // Remove this line to avoid setting selected value
     }
   };
 
@@ -112,16 +112,9 @@ function AppContent() {
     // Remove the option from filterData
     const newFilterData = filterData.filter((item) => item !== option);
     setFilterData(newFilterData);
-
-    // if (filter === option) {
-    //   if (newFilterData.length > 0) {
-    //     setFilter(newFilterData[newFilterData.length - 1]);
-    //   } else {
-    //     setFilter("");
-    //   }
-    // }
+    // Optionally clear filter if removed, or keep as is
     if (filter === option) {
-      setFilter(""); 
+      setFilter("");
     }
   };
 
@@ -196,11 +189,8 @@ function AppContent() {
               <select
                 name="filter"
                 id="filter"
-                value={filter || "None"}
-                onChange={(e) => {
-                  const selected = e.target.value;
-                  setFilter(selected === "None" ? "" : selected);
-                }}
+                // value={filter || "None"} // Remove value prop to make uncontrolled
+                // onChange handler removed
                 className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-['Figtree'] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 {filterData.map((option) => (
@@ -217,16 +207,24 @@ function AppContent() {
                 <Plus size={14} />
                 Add
               </button>
-              <button
-                onClick={() => removefilterData(filter)}
-                className="px-2 py-1 text-sm bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors font-['Figtree'] flex items-center gap-1"
-                title="Remove current filter"
-                disabled={filterData.length === 0}
-              >
-                <X size={14} />
-                Remove
-              </button>
             </div>
+            {/* List filter options with remove buttons */}
+            {filterData.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {filterData.map((option) => (
+                  <span key={option} className="flex items-center bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-lg text-sm font-['Figtree']">
+                    {option}
+                    <button
+                      onClick={() => removefilterData(option)}
+                      className="ml-1 text-red-500 hover:text-red-700"
+                      title={`Remove ${option}`}
+                    >
+                      <X size={14} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -240,7 +238,8 @@ function AppContent() {
               config={chartConfig}
               title={chartTitle}
               kpiTitle={kpiTitle}
-              filter={filter}
+              filter={filterData} // Pass filterData as filter (expects string[])
+              filterData={filterData}
               summary={summary}
               editable={true}
               onDataChange={handleDataChange}
@@ -347,7 +346,7 @@ function AppContent() {
                 config={chartConfig}
                 title={chartTitle}
                 kpiTitle={kpiTitle}
-                filter={filter}
+                filter={filterData}
                 summary={summary}
               />
             )}
