@@ -60,6 +60,7 @@ export interface ChartProps {
   onDataChange?: (data: ChartData[] | LineChartData[]) => void;
   onConfigChange?: (config: ChartConfig) => void;
   editable?: boolean;
+  showSummaryTable?: boolean;
 }
 
 export interface EditableChartState {

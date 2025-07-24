@@ -67,7 +67,7 @@ function AppContent() {
   );
   const [chartConfig, setChartConfig] = useState<ChartConfig>(initialConfig);
   const [chartTitle, setChartTitle] = useState("Interactive Chart");
-  const [kpiTitle, setKpiTitle] = useState("KPI");
+  const [kpiTitle, setKpiTitle] = useState("");
   const [filter, setFilter] = useState("");
   const [summary, setSummary] = useState<string>(
     "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
@@ -346,7 +346,7 @@ function AppContent() {
                 config={chartConfig}
                 title={chartTitle}
                 kpiTitle={kpiTitle}
-                filter={filterData}
+                filterData={filterData}
                 summary={summary}
               />
             )}

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ChartType, ChartData, LineChartData, ChartConfig } from '../types/ChartTypes';
 import { Copy, Download, Code } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import { Chart, ThemeProvider } from '@whysorush/dynamic-chart-component';
 
 interface CodeGeneratorProps {
   type: ChartType;
@@ -9,14 +10,51 @@ interface CodeGeneratorProps {
   config: ChartConfig;
   title?: string;
   kpiTitle?: string;
-  filter?: string[];
   summary?: string;
+  filterData?: any[];
+  showSummaryTable?: boolean;
 }
 
-const CodeGenerator: React.FC<CodeGeneratorProps> = ({ type, data, config, title, kpiTitle, summary, filter }) => {
+const CodeGenerator: React.FC<CodeGeneratorProps> = ({ type, data, config, title, kpiTitle, summary, filterData }) => {
   const [activeTab, setActiveTab] = useState<'react' | 'vanilla' | 'config'>('react');
   const [copied, setCopied] = useState(false);
   const { isDark } = useTheme();
+  const [showSummaryTable, setShowSummaryTable] = useState(true);
+  // Resizable block state
+  const [blockSize, setBlockSize] = useState({ width: 700, height: 500 });
+  const resizableRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!resizableRef.current) return;
+    const el = resizableRef.current;
+    const observer = new ResizeObserver(entries => {
+      for (let entry of entries) {
+        const { width, height } = entry.contentRect;
+        setBlockSize({ width: Math.round(width), height: Math.round(height) });
+      }
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // Helper for summary table rows (merged, sorted)
+  let mergedRows: { label: string; value: number }[] = [];
+  let total = 0;
+  let avg = 0;
+  if (['bar', 'pie', 'donut'].includes(type)) {
+    const chartData = Array.isArray(data) ? (data as any[]).filter(d => typeof d.label === 'string' && typeof d.value === 'number') : [];
+    const labelMap = new Map<string, number>();
+    chartData.forEach(item => {
+      if (labelMap.has(item.label)) {
+        labelMap.set(item.label, labelMap.get(item.label)! + item.value);
+      } else {
+        labelMap.set(item.label, item.value);
+      }
+    });
+    mergedRows = Array.from(labelMap.entries()).map(([label, value]) => ({ label, value }));
+    total = mergedRows.reduce((sum, d) => sum + d.value, 0);
+    avg = mergedRows.length ? total / mergedRows.length : 0;
+    mergedRows = mergedRows.sort((a, b) => b.value - a.value);
+  }
 
   const generateReactCode = () => {
     const dataString = JSON.stringify(data, null, 2);
@@ -44,26 +82,96 @@ const CodeGenerator: React.FC<CodeGeneratorProps> = ({ type, data, config, title
       summaryTableBlock = `\n    {/* Chart Summary Table */}\n    <table style={{ minWidth: '100%', fontSize: '0.9em', marginTop: 24 }}><thead><tr><th style={{ padding: '4px 8px' }}>Label</th><th style={{ padding: '4px 8px' }}>Value</th><th style={{ padding: '4px 8px' }}>% of Total</th></tr></thead><tbody>{mergedRows.map((item, idx) => (<tr key={idx}><td style={{ padding: '4px 8px' }}>{item.label}</td><td style={{ padding: '4px 8px' }}>{item.value}</td><td style={{ padding: '4px 8px' }}>{total ? ((item.value / total) * 100).toFixed(1) + '%' : '-'}</td></tr>))}</tbody><tfoot><tr><td style={{ padding: '4px 8px' }}>Total</td><td style={{ padding: '4px 8px' }}>{total}</td><td style={{ padding: '4px 8px' }}>100%</td></tr><tr><td style={{ padding: '4px 8px' }}>Average</td><td style={{ padding: '4px 8px' }}>{avg.toFixed(2)}</td><td style={{ padding: '4px 8px' }}>-</td></tr></tfoot></table>`;
     }
 
+    // React code generation
     return `import React from 'react';
-import { Chart, ChartEditor, ThemeProvider } from '@whysorush/dynamic-chart-component';
+import { Chart, ThemeProvider } from '@whysorush/dynamic-chart-component';
 
 const data = ${dataString};
+const config = { ...${configString}, width: ${blockSize.width}, height: ${blockSize.height - 100} };
 
-const config = ${configString};
+function App() {
+  // Summary table logic
+  let mergedRows = [];
+  let total = 0;
+  let avg = 0;
+  if (['bar', 'pie', 'donut'].includes('${type}')) {
+    const chartData = Array.isArray(data) ? data.filter(d => typeof d.label === 'string' && typeof d.value === 'number') : [];
+    const labelMap = new Map();
+    chartData.forEach(item => {
+      if (labelMap.has(item.label)) {
+        labelMap.set(item.label, labelMap.get(item.label) + item.value);
+      } else {
+        labelMap.set(item.label, item.value);
+      }
+    });
+    mergedRows = Array.from(labelMap.entries()).map(([label, value]) => ({ label, value }));
+    total = mergedRows.reduce((sum, d) => sum + d.value, 0);
+    avg = mergedRows.length ? total / mergedRows.length : 0;
+    mergedRows = mergedRows.sort((a, b) => b.value - a.value);
+  }
 
   return (
-  <ThemeProvider>
-    <Chart
-      type="${type}"
-      data={data}
-      config={config}
-      title="${title || 'My Chart'}"
-      kpiTitle="${kpiTitle}"
-      filter="${filter}"
-      summary="${summary}"
-    />${summaryTableBlock}
-  </ThemeProvider>
-  );`;
+    <ThemeProvider>
+      <div
+        style={{ resize: 'both', overflow: 'auto', minWidth: 350, minHeight: 350, maxWidth: '100%', maxHeight: 900, width: ${blockSize.width}, height: ${blockSize.height}, border: '2px solid #e5e7eb', borderRadius: 12, background: 'white', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', padding: 24, position: 'relative' }}
+      >
+        <Chart
+          type="${type}"
+          data={data}
+          config={config}
+          title="${title || 'My Chart'}"
+          kpiTitle="${kpiTitle}"
+          filter="${filterData ? filterData.join(', ') : ''}"
+          summary="${summary}"
+          showSummaryTable={${showSummaryTable}}
+        />
+        ${showSummaryTable && ['bar', 'pie', 'donut'].includes(type) ? `
+        {mergedRows.length > 0 && (
+          <table style={{ minWidth: '100%', fontSize: '0.9em', marginTop: 24 }}>
+            <thead>
+              <tr>
+                <th style={{ padding: '4px 8px' }}>Label</th>
+                <th style={{ padding: '4px 8px' }}>Value</th>
+                <th style={{ padding: '4px 8px' }}>% of Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {mergedRows.map((item, idx) => (
+                <tr key={idx}>
+                  <td style={{ padding: '4px 8px' }}>{item.label}</td>
+                  <td style={{ padding: '4px 8px' }}>{item.value}</td>
+                  <td style={{ padding: '4px 8px' }}>{total ? ((item.value / total) * 100).toFixed(1) + '%' : '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td style={{ padding: '4px 8px' }}>Total</td>
+                <td style={{ padding: '4px 8px' }}>{total}</td>
+                <td style={{ padding: '4px 8px' }}>100%</td>
+              </tr>
+              <tr>
+                <td style={{ padding: '4px 8px' }}>Average</td>
+                <td style={{ padding: '4px 8px' }}>{avg.toFixed(2)}</td>
+                <td style={{ padding: '4px 8px' }}>-</td>
+              </tr>
+            </tfoot>
+          </table>
+        )}
+        ` : ''}
+        {${summary ? 'true' : 'false'} && (
+          <div style={{ background: '#fff', borderRadius: 8, boxShadow: '0 1px 4px rgba(0,0,0,0.04)', padding: 16, marginTop: 24, border: '1px solid #e5e7eb' }}>
+            <div style={{ fontWeight: 600, marginBottom: 8 }}>Chart Summary</div>
+            <div style={{ color: '#4b5563', fontSize: 14 }}>${summary}</div>
+          </div>
+        )}
+      </div>
+    </ThemeProvider>
+  );
+}
+
+export default App;
+`;
   };
 
   const generateVanillaCode = () => {
@@ -124,16 +232,22 @@ const config = ${configString};
         <h2>${title || 'My Chart'}</h2>
         <div class="chart-meta">
           <p>${kpiTitle || ''}</p>
-          <p>${filter || ''}</p>
+          <p>${filterData || ''}</p>
         </div>
         <canvas id="chart" width="${config.width || 600}" height="${config.height || 400}"></canvas>
         <p>${summary || ''}</p>
+        <div style="margin-bottom: 8px;">
+          <label style="font-size:0.95em;">
+            <input type="checkbox" id="toggle-summary-table" checked /> Show Summary Table
+          </label>
+        </div>
         <div id="summary-table"></div>
     </div>
 
     <script>
         const data = ${JSON.stringify(data, null, 8)};
         const config = ${JSON.stringify(config, null, 8)};
+        var showSummaryTable = ${showSummaryTable};
         function drawChart() {
             const canvas = document.getElementById('chart');
             const ctx = canvas.getContext('2d');
@@ -141,14 +255,20 @@ const config = ${configString};
             ctx.font = ((config.fontSize || 14) + "px " + (config.fontFamily || "Figtree"));
             // Your chart drawing logic here
             // This is a simplified example - you'll need to implement the full drawing logic
-            console.log('Chart type:', config.type || 'unknown');
+            console.log('Chart type:', type);
             console.log('Data:', data);
             console.log('Config:', config);
         }
         function renderSummaryTable() {
-          document.getElementById('summary-table').innerHTML = summaryTable;
+          if (showSummaryTable) {
+            document.getElementById('summary-table').innerHTML = summaryTable;
+            document.getElementById('summary-table').style.display = '';
+          } else {
+            document.getElementById('summary-table').innerHTML = '';
+            document.getElementById('summary-table').style.display = 'none';
+          }
         }
-        // Initial render
+        document.getElementById('toggle-summary-table').addEventListener('change', renderSummaryTable);
         drawChart();
         renderSummaryTable();
     </script>
@@ -266,7 +386,6 @@ const chartData = ${JSON.stringify(data, null, 2)};
             </button>
           </div>
         </div>
-
         {/* Tabs */}
         <div className="flex mt-4 border-b border-gray-200 dark:border-gray-700">
           {[
@@ -287,15 +406,77 @@ const chartData = ${JSON.stringify(data, null, 2)};
             </button>
           ))}
         </div>
+        {/* Summary Table Toggle */}
+        <div className="flex items-center gap-4 mt-4">
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input
+              type="checkbox"
+              checked={showSummaryTable}
+              onChange={() => setShowSummaryTable(v => !v)}
+              className="form-checkbox h-4 w-4 text-blue-600"
+            />
+            Include Summary Table in Generated Code
+          </label>
+        </div>
       </div>
-
+      {/* Live Preview */}
+      <div className="p-6">
+        <ThemeProvider>
+          <div
+            ref={resizableRef}
+            style={{ resize: 'both', overflow: 'auto', minWidth: 350, minHeight: 350, maxWidth: '100%', maxHeight: 900, width: blockSize.width, height: blockSize.height, border: '2px solid #e5e7eb', borderRadius: 12, background: 'white', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', padding: 24, position: 'relative' }}
+          >
+            <Chart
+              type={type}
+              data={data}
+              config={{ ...config, width: blockSize.width, height: blockSize.height - 100 }}
+              title={title}
+              kpiTitle={kpiTitle}
+              filterData={filterData || []}
+              summary={summary}
+              showSummaryTable={showSummaryTable}
+            />
+            {/* {showSummaryTable && mergedRows.length > 0 && (
+              <table style={{ minWidth: '100%', fontSize: '0.9em', marginTop: 24 }}>
+                <thead>
+                  <tr>
+                    <th style={{ padding: '4px 8px' }}>Label</th>
+                    <th style={{ padding: '4px 8px' }}>Value</th>
+                    <th style={{ padding: '4px 8px' }}>% of Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {mergedRows.map((item, idx) => (
+                    <tr key={idx}>
+                      <td style={{ padding: '4px 8px' }}>{item.label}</td>
+                      <td style={{ padding: '4px 8px' }}>{item.value}</td>
+                      <td style={{ padding: '4px 8px' }}>{total ? ((item.value / total) * 100).toFixed(1) + '%' : '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td style={{ padding: '4px 8px' }}>Total</td>
+                    <td style={{ padding: '4px 8px' }}>{total}</td>
+                    <td style={{ padding: '4px 8px' }}>100%</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '4px 8px' }}>Average</td>
+                    <td style={{ padding: '4px 8px' }}>{avg.toFixed(2)}</td>
+                    <td style={{ padding: '4px 8px' }}>-</td>
+                  </tr>
+                </tfoot>
+              </table>
+            )} */}
+          </div>
+        </ThemeProvider>
+      </div>
       {/* Code Display */}
       <div className="p-0">
         <pre className="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 p-6 overflow-x-auto text-sm font-mono leading-relaxed max-h-96">
           <code>{getCode()}</code>
         </pre>
       </div>
-
       {/* Usage Instructions */}
       <div className="p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
         <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 font-['Figtree']">

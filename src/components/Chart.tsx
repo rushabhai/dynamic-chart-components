@@ -11,7 +11,7 @@ import { Edit3, Check, X } from "lucide-react";
 import DataActions from "./DataActions";
 
 // Add filterData to props
-type ChartPropsWithFilterData = ChartProps & { filterData?: string[] };
+type ChartPropsWithFilterData = ChartProps & { filterData?: string[]; showSummaryTable?: boolean };
 
 const Chart: React.FC<ChartPropsWithFilterData> = ({
   type,
@@ -19,13 +19,12 @@ const Chart: React.FC<ChartPropsWithFilterData> = ({
   config = {},
   title,
   kpiTitle,
-  filter,
   filterData = [],
   summary,
   className = "",
   onDataChange,
-  onConfigChange,
   editable = false,
+  showSummaryTable: propShowSummaryTable = true,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -1126,16 +1125,59 @@ const Chart: React.FC<ChartPropsWithFilterData> = ({
     setTooltip(null);
   };
 
+  // Resizable container state
+  const [containerSize, setContainerSize] = useState({ width: config.width || 700, height: config.height || 500 });
+  const resizableRef = useRef<HTMLDivElement>(null);
+
+  // Handle resize (native CSS resize or custom logic)
+  useEffect(() => {
+    if (!resizableRef.current) return;
+    const el = resizableRef.current;
+    const observer = new ResizeObserver(entries => {
+      for (let entry of entries) {
+        const { width, height } = entry.contentRect;
+        setContainerSize({ width, height });
+      }
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const showSummary = propShowSummaryTable !== false;
+
   return (
-    <div className={`relative ${className}`} ref={containerRef}>
+    <div
+      ref={resizableRef}
+      style={{ resize: 'both', overflow: 'auto', minWidth: 350, minHeight: 350, maxWidth: '100%', maxHeight: 900, width: containerSize.width, height: containerSize.height, border: '2px solid #e5e7eb', borderRadius: 12, background: 'white', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', padding: 24, position: 'relative' }}
+      className={className}
+    >
+      {/* Chart Title */}
       {title && (
         <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100 font-['Figtree']">
           {title}
         </h3>
       )}
-
-      <div className="bg-white dark:bg-gray-800  rounded-xl shadow-lg p-6 backdrop-blur-sm border border-gray-200 dark:border-gray-700">
-        <div className="flex justify-between items-center mb-4">
+      {/* {kpiTitle && (
+            <span className="text-sm font-semibold border px-4 py-2 rounded-lg text-gray-600 dark:text-gray-300 font-['Figtree']">
+              {kpiTitle}
+            </span>
+          )} */}
+      {/* Filter Dropdown */}
+      {/* {filterData.length > 0 && (
+        <div className="mb-4">
+          <select
+            className="text-sm font-semibold border px-4 py-2 rounded-lg text-gray-600 dark:text-gray-300 font-['Figtree'] bg-white dark:bg-gray-800"
+            // No value or onChange to keep it uncontrolled
+          >
+            {filterData.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </div>
+      )} */}
+      <div className="flex justify-between items-center mb-4">
           {kpiTitle && (
             <span className="text-sm font-semibold border px-4 py-2 rounded-lg text-gray-600 dark:text-gray-300 font-['Figtree']">
               {kpiTitle}
@@ -1155,20 +1197,24 @@ const Chart: React.FC<ChartPropsWithFilterData> = ({
             </select>
           )}
         </div>
-        <canvas
-          ref={canvasRef}
-          onMouseMove={handleMouseMove}
-          onMouseLeave={handleMouseLeave}
-          className="max-w-full h-auto cursor-crosshair mb-6"
-        />
-        <div className="bg-white dark:bg-gray-800 font-semibold  rounded-xl shadow-md p-4 backdrop-blur-sm border border-gray-200 dark:border-gray-700">
-          Chart Summary
-          <p className="text-sm font-medium text-gray-600  dark:text-gray-300 mt-2 font-['Figtree']">
-            {summary}
-          </p>
+      {/* Chart Canvas */}
+      <canvas
+        ref={canvasRef}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        className="max-w-full h-auto cursor-crosshair mb-6"
+        style={{ width: '100%', maxWidth: '100%' }}
+      />
+      {/* Chart Summary */}
+      {summary && (
+        <div className="bg-white dark:bg-gray-800 font-semibold rounded-xl shadow-md p-4 backdrop-blur-sm border border-gray-200 dark:border-gray-700 mb-4">
+          <div className="mb-2">Chart Summary</div>
+          <div className="text-sm font-medium text-gray-600 dark:text-gray-300 font-['Figtree']">{summary}</div>
         </div>
-        <div className="bg-white dark:bg-gray-800 font-semibold  rounded-xl shadow-md p-4 backdrop-blur-sm border border-gray-200 dark:border-gray-700">
-          {/* Chart Summary Table */}
+      )}
+      {/* Summary Table */}
+      {showSummary && (
+        <div className="bg-white dark:bg-gray-800 font-semibold rounded-xl shadow-md p-4 backdrop-blur-sm border border-gray-200 dark:border-gray-700">
           <div className="overflow-x-auto">
             {(() => {
               // Helper to render color swatch
@@ -1312,155 +1358,20 @@ const Chart: React.FC<ChartPropsWithFilterData> = ({
             })()}
           </div>
         </div>
-        {tooltip && (
-          <div
-            className="fixed z-50 bg-gray-900 dark:bg-gray-700 text-white px-3 py-2 rounded-lg shadow-lg text-sm font-['Figtree'] pointer-events-none whitespace-pre-line"
-            style={{
-              left: tooltip.x + 10,
-              top: tooltip.y - 80,
-            }}
-          >
-            {tooltip.content}
-          </div>
-        )}
-
-        {editable && !isMultiDataset && (
-          <div className="mt-6 space-y-4">
-            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 font-['Figtree']">
-              Edit Data Points
-            </h4>
-            <DataActions
-              type={type}
-              data={data}
-              onDataChange={onDataChange}
-              isMultiDataset={isMultiDataset}
-            />
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {ensureChartData(data).map((item, index) => (
-                <div
-                  key={index}
-                  className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300 font-['Figtree']">
-                      {item.label || `Point ${index + 1}`}
-                    </span>
-                    <button
-                      onClick={() =>
-                        startEdit(index, item.value?.toString() || "0")
-                      }
-                      className="p-1 text-gray-400 hover:text-blue-500 transition-colors"
-                    >
-                      <Edit3 size={14} />
-                    </button>
-                  </div>
-
-                  {editState.isEditing && editState.editingIndex === index ? (
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        value={editState.tempValue}
-                        onChange={(e) =>
-                          setEditState((prev) => ({
-                            ...prev,
-                            tempValue: e.target.value,
-                          }))
-                        }
-                        className="flex-1 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-['Figtree']"
-                        autoFocus
-                      />
-                      <button
-                        onClick={confirmEdit}
-                        className="p-1 text-green-500 hover:text-green-600"
-                      >
-                        <Check size={14} />
-                      </button>
-                      <button
-                        onClick={cancelEdit}
-                        className="p-1 text-red-500 hover:text-red-600"
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="text-lg font-semibold text-gray-900 dark:text-gray-100 font-['Figtree']">
-                      {item.value}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Updated Legend for Multi-Dataset Support */}
-        {defaultConfig.showLegend && (
-          <div className="mt-4 flex flex-wrap gap-4 justify-center">
-            {(() => {
-              if (type === "line" || type === "area") {
-                if (isMultiDataset) {
-                  const datasets = data as [] | Dataset[];
-                  return datasets.map((dataset, index) => (
-                    <div key={dataset.id} className="flex items-center gap-2">
-                      <div
-                        className={`w-4 h-4 rounded ${
-                          dataset.visible ? "" : "opacity-50"
-                        }`}
-                        style={{
-                          backgroundColor:
-                            dataset.color ||
-                            defaultConfig.colors[
-                              index % defaultConfig.colors.length
-                            ],
-                        }}
-                      />
-                      <span
-                        className={`text-sm font-['Figtree'] ${
-                          dataset.visible
-                            ? "text-gray-700 dark:text-gray-300"
-                            : "text-gray-400 dark:text-gray-500"
-                        }`}
-                      >
-                        {dataset.label}
-                      </span>
-                    </div>
-                  ));
-                } else {
-                  return (
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-4 h-4 rounded"
-                        style={{ backgroundColor: defaultConfig.colors[0] }}
-                      />
-                      <span className="text-sm text-gray-700 dark:text-gray-300 font-['Figtree']">
-                        Data
-                      </span>
-                    </div>
-                  );
-                }
-              } else {
-                return ensureChartData(data).map((item, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <div
-                      className="w-4 h-4 rounded"
-                      style={{
-                        backgroundColor:
-                          item.color ||
-                          defaultConfig.colors[
-                            index % defaultConfig.colors.length
-                          ],
-                      }}
-                    />
-                    <span className="text-sm text-gray-700 dark:text-gray-300 font-['Figtree']">
-                      {item.label}
-                    </span>
-                  </div>
-                ));
-              }
-            })()}
-          </div>
-        )}
-      </div>
+      )}
+      {/* Tooltip */}
+      {tooltip && (
+        <div
+          className="fixed z-50 bg-gray-900 dark:bg-gray-700 text-white px-3 py-2 rounded-lg shadow-lg text-sm font-['Figtree'] pointer-events-none whitespace-pre-line"
+          style={{
+            left: tooltip.x + 10,
+            top: tooltip.y - 80,
+          }}
+        >
+          {tooltip.content}
+        </div>
+      )}
+      {/* Editable Data Points, Legend, etc. remain outside the resizable block for now */}
     </div>
   );
 };
