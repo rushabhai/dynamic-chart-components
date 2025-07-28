@@ -9,6 +9,7 @@ import {
 import { useTheme } from "../context/ThemeContext";
 import { Edit3, Check, X } from "lucide-react";
 import DataActions from "./DataActions";
+import ChartSummaryTable from "./ChartSummaryTable";
 
 // Add filterData to props
 type ChartPropsWithFilterData = ChartProps & { filterData?: string[]; showSummaryTable?: boolean };
@@ -23,7 +24,7 @@ const Chart: React.FC<ChartPropsWithFilterData> = ({
   summary,
   className = "",
   onDataChange,
-  editable = false,
+  // editable = false,
   showSummaryTable: propShowSummaryTable = true,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -422,9 +423,9 @@ const Chart: React.FC<ChartPropsWithFilterData> = ({
     }
 
     // Draw background bars first if background color is specified or in dark mode
-    if (defaultConfig.showBarBackground !== false) {
-      ctx.fillStyle =
-        defaultConfig.barBackgroundColor || (isDark ? "#33445B" : "#F5F5F5");
+    // Draw background bars first if in dark mode
+    if (isDark) {
+      ctx.fillStyle = "#33445B";
       chartData.forEach((_, index) => {
         const x =
           margin.left + index * (barWidth + barSpacing) + barSpacing / 2;
@@ -1125,255 +1126,139 @@ const Chart: React.FC<ChartPropsWithFilterData> = ({
     setTooltip(null);
   };
 
-  // Resizable container state
-  const [containerSize, setContainerSize] = useState({ width: config.width || 700, height: config.height || 500 });
-  const resizableRef = useRef<HTMLDivElement>(null);
+  // Use config.width and config.height directly, with responsive fallbacks
+  const chartWidth = typeof config.width === 'number' ? config.width : 700;
+  const chartHeight = typeof config.height === 'number' ? config.height : 500;
+  
+  // Responsive sizing
+  const responsiveWidth = typeof chartWidth === 'number' ? Math.min(chartWidth, window.innerWidth - 48) : '100%';
+  const responsiveHeight = typeof chartHeight === 'number' ? Math.min(chartHeight, window.innerHeight * 0.6) : 'auto';
 
-  // Handle resize (native CSS resize or custom logic)
-  useEffect(() => {
-    if (!resizableRef.current) return;
-    const el = resizableRef.current;
-    const observer = new ResizeObserver(entries => {
-      for (let entry of entries) {
-        const { width, height } = entry.contentRect;
-        setContainerSize({ width, height });
-      }
-    });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  const showSummary = propShowSummaryTable !== false;
+  // Only show summary table if explicitly true
+  const showSummaryTable = propShowSummaryTable === true;
 
   return (
     <div
-      ref={resizableRef}
-      style={{ resize: 'both', overflow: 'auto', minWidth: 350, minHeight: 350, maxWidth: '100%', maxHeight: 900, width: containerSize.width, height: containerSize.height, border: '2px solid #e5e7eb', borderRadius: 12, background: 'white', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', padding: 24, position: 'relative' }}
-      className={className}
+      role="img"
+      aria-label={title ? `Chart: ${title}` : "Chart visualization"}
+      aria-describedby={summary ? "chart-summary" : undefined}
+      style={{
+        width: '100%',
+        maxWidth: responsiveWidth,
+        minHeight: responsiveHeight,
+        border: '2px solid #e5e7eb',
+        borderRadius: 12,
+        background: 'white',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+        padding: '0',
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '16px',
+        overflow: 'hidden',
+      }}
+      className={`${className} p-4 sm:p-6`}
     >
-      {/* Chart Title */}
-      {title && (
-        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100 font-['Figtree']">
-          {title}
-        </h3>
-      )}
-      {/* {kpiTitle && (
-            <span className="text-sm font-semibold border px-4 py-2 rounded-lg text-gray-600 dark:text-gray-300 font-['Figtree']">
-              {kpiTitle}
-            </span>
-          )} */}
-      {/* Filter Dropdown */}
-      {/* {filterData.length > 0 && (
-        <div className="mb-4">
-          <select
-            className="text-sm font-semibold border px-4 py-2 rounded-lg text-gray-600 dark:text-gray-300 font-['Figtree'] bg-white dark:bg-gray-800"
-            // No value or onChange to keep it uncontrolled
-          >
-            {filterData.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-        </div>
-      )} */}
-      <div className="flex justify-between items-center mb-4">
+      {/* Header Section */}
+      <div className="flex flex-col gap-3">
+        {/* Chart Title */}
+        {title && (
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 font-['Figtree'] leading-tight">
+            {title}
+          </h3>
+        )}
+        {/* KPI Title and Filter Row */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           {kpiTitle && (
-            <span className="text-sm font-semibold border px-4 py-2 rounded-lg text-gray-600 dark:text-gray-300 font-['Figtree']">
+            <span className="text-sm font-semibold border px-3 py-2 rounded-lg text-gray-600 dark:text-gray-300 font-['Figtree'] bg-gray-50 dark:bg-gray-800">
               {kpiTitle}
             </span>
           )}
-          {/* Render filter dropdown if filterData is provided and has options */}
-          {filterData.length > 0 && (
-            <select
-              className="text-sm font-semibold border px-4 py-2 rounded-lg text-gray-600 dark:text-gray-300 font-['Figtree'] bg-white dark:bg-gray-800"
-              // No value or onChange to keep it uncontrolled
-            >
-              {filterData.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
+          {/* Filter Dropdown */}
+          {filterData && filterData.length > 0 && (
+            <div className="flex flex-col">
+              <label
+                htmlFor="chart-filter"
+                className="sr-only"
+              >
+                Filter Options
+              </label>
+              <select
+                id="chart-filter"
+                aria-label="Filter Options"
+                className="text-sm font-semibold border px-3 py-2 rounded-lg text-gray-600 dark:text-gray-300 font-['Figtree'] bg-white dark:bg-gray-800 min-w-[120px]"
+                tabIndex={0}
+              >
+                {filterData.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </div>
           )}
         </div>
+      </div>
+
       {/* Chart Canvas */}
-      <canvas
-        ref={canvasRef}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-        className="max-w-full h-auto cursor-crosshair mb-6"
-        style={{ width: '100%', maxWidth: '100%' }}
-      />
+      <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+        <canvas
+          ref={canvasRef}
+          width={defaultConfig.width}
+          height={defaultConfig.height}
+          style={{
+            width: responsiveWidth,
+            height: responsiveHeight,
+            borderRadius: 8,
+            background: isDark ? '#1f2937' : '#fff',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+            outline: 'none',
+          }}
+          tabIndex={0}
+          aria-label={title ? `Chart: ${title}` : 'Chart visualization'}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+        />
+      </div>
+
       {/* Chart Summary */}
       {summary && (
-        <div className="bg-white dark:bg-gray-800 font-semibold rounded-xl shadow-md p-4 backdrop-blur-sm border border-gray-200 dark:border-gray-700 mb-4">
-          <div className="mb-2">Chart Summary</div>
-          <div className="text-sm font-medium text-gray-600 dark:text-gray-300 font-['Figtree']">{summary}</div>
-        </div>
-      )}
-      {/* Summary Table */}
-      {showSummary && (
-        <div className="bg-white dark:bg-gray-800 font-semibold rounded-xl shadow-md p-4 backdrop-blur-sm border border-gray-200 dark:border-gray-700">
-          <div className="overflow-x-auto">
-            {(() => {
-              // Helper to render color swatch
-              const ColorSwatch = ({ color }: { color?: string }) => (
-                <span
-                  className="inline-block w-4 h-4 rounded-full border border-gray-300 align-middle mr-2"
-                  style={{ backgroundColor: color || '#ccc' }}
-                  title={color}
-                />
-              );
-
-              // Helper to format numbers
-              const formatNum = (n: number) => n.toLocaleString(undefined, { maximumFractionDigits: 2 });
-
-              // Bar, Pie, Donut: ChartData[]
-              if (type === 'bar' || type === 'pie' || type === 'donut') {
-                let chartData = ensureChartData(data);
-                // Merge repeated labels by summing their values
-                const labelMap = new Map();
-                for (const item of chartData) {
-                  if (labelMap.has(item.label)) {
-                    labelMap.set(item.label, labelMap.get(item.label) + item.value);
-                  } else {
-                    labelMap.set(item.label, item.value);
-                  }
-                }
-                let mergedRows = Array.from(labelMap.entries()).map(([label, value]) => ({ label, value }));
-                const total = mergedRows.reduce((sum, d) => sum + d.value, 0);
-                const avg = mergedRows.length ? total / mergedRows.length : 0;
-                // Sort by descending % of Total (i.e., value)
-                mergedRows = mergedRows.sort((a, b) => b.value - a.value);
-                return (
-                  <table className="min-w-full text-sm text-left">
-                    <thead>
-                      <tr>
-                        <th className="py-1 px-2">Label</th>
-                        <th className="py-1 px-2">Value</th>
-                        <th className="py-1 px-2">% of Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {mergedRows.map((item, idx) => (
-                        <tr key={idx} className="border-t border-gray-200 dark:border-gray-700">
-                          <td className="py-1 px-2">{item.label}</td>
-                          <td className="py-1 px-2">{formatNum(item.value)}</td>
-                          <td className="py-1 px-2">{total ? ((item.value / total) * 100).toFixed(1) + '%' : '-'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                    <tfoot>
-                      <tr className="font-bold border-t border-gray-300 dark:border-gray-600">
-                        <td className="py-1 px-2">Total</td>
-                        <td className="py-1 px-2">{formatNum(total)}</td>
-                        <td className="py-1 px-2">100%</td>
-                      </tr>
-                      <tr className="font-bold">
-                        <td className="py-1 px-2">Average</td>
-                        <td className="py-1 px-2">{formatNum(avg)}</td>
-                        <td className="py-1 px-2">-</td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                );
-              }
-
-              // Line/Area: Multi-series (Dataset[])
-              const isDatasetArray = (arr: any): arr is Dataset[] => {
-                return Array.isArray(arr) && arr.length > 0 && typeof arr[0] === 'object' && 'id' in arr[0] && 'data' in arr[0];
-              };
-              if ((type === 'line' || type === 'area') && isDatasetArray(data)) {
-                const datasets = data.filter(ds => ds.visible);
-                if (datasets.length === 0) return <div>No data</div>;
-                // Collect all unique x values
-                const xSet = new Set<string | number>();
-                datasets.forEach(ds => ds.data.forEach(pt => xSet.add(pt.x)));
-                const xValues = Array.from(xSet);
-                // Build table rows: one per x, columns for each dataset
-                return (
-                  <table className="min-w-full text-sm text-left">
-                    <thead>
-                      <tr>
-                        <th className="py-1 px-2">X</th>
-                        {datasets.map(ds => (
-                          <th key={ds.id} className="py-1 px-2">
-                            <ColorSwatch color={ds.color} />{ds.label}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {xValues.map((x, rowIdx) => (
-                        <tr key={rowIdx} className="border-t border-gray-200 dark:border-gray-700">
-                          <td className="py-1 px-2">{x}</td>
-                          {datasets.map(ds => {
-                            const pt = ds.data.find(p => p.x === x);
-                            return <td key={ds.id} className="py-1 px-2">{pt ? formatNum(pt.y) : '-'}</td>;
-                          })}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                );
-              }
-
-              // Line/Area: Single series (LineChartData[])
-              if ((type === 'line' || type === 'area') && Array.isArray(data) && data.length > 0 && !('id' in data[0])) {
-                const lineData = data as LineChartData[];
-                const total = lineData.reduce((sum, d) => sum + d.y, 0);
-                const avg = lineData.length ? total / lineData.length : 0;
-                return (
-                  <table className="min-w-full text-sm text-left">
-                    <thead>
-                      <tr>
-                        <th className="py-1 px-2">X</th>
-                        <th className="py-1 px-2">Y</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {lineData.map((item, idx) => (
-                        <tr key={idx} className="border-t border-gray-200 dark:border-gray-700">
-                          <td className="py-1 px-2">{item.x}</td>
-                          <td className="py-1 px-2">{formatNum(item.y)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                    <tfoot>
-                      <tr className="font-bold border-t border-gray-300 dark:border-gray-600">
-                        <td className="py-1 px-2">Total</td>
-                        <td className="py-1 px-2">{formatNum(total)}</td>
-                      </tr>
-                      <tr className="font-bold">
-                        <td className="py-1 px-2">Average</td>
-                        <td className="py-1 px-2">{formatNum(avg)}</td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                );
-              }
-
-              return <div>No summary table available for this chart type.</div>;
-            })()}
+        <section id="chart-summary" className="mt-2 mb-2">
+          <div className="text-sm text-gray-700 dark:text-gray-300 font-['Figtree']">
+            {summary}
           </div>
-        </div>
+        </section>
       )}
+
+      {/* Summary Table */}
+      {showSummaryTable && (
+        <ChartSummaryTable data={data} />
+      )}
+
       {/* Tooltip */}
       {tooltip && (
         <div
-          className="fixed z-50 bg-gray-900 dark:bg-gray-700 text-white px-3 py-2 rounded-lg shadow-lg text-sm font-['Figtree'] pointer-events-none whitespace-pre-line"
           style={{
-            left: tooltip.x + 10,
-            top: tooltip.y - 80,
+            position: 'fixed',
+            left: tooltip.x + 12,
+            top: tooltip.y + 12,
+            background: 'rgba(0,0,0,0.85)',
+            color: '#fff',
+            padding: '8px 12px',
+            borderRadius: 8,
+            fontSize: 13,
+            zIndex: 9999,
+            pointerEvents: 'none',
+            whiteSpace: 'pre-line',
+            maxWidth: 320,
           }}
+          role="tooltip"
         >
           {tooltip.content}
         </div>
       )}
-      {/* Editable Data Points, Legend, etc. remain outside the resizable block for now */}
     </div>
-  );
+ );
 };
 
 export default Chart;

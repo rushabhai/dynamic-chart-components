@@ -18,6 +18,7 @@ import {
 import { useTheme } from "../context/ThemeContext";
 import DatasetManager from "./DatasetManager";
 import Chart from "./Chart";
+import CodeGenerator from "./CodeGenerator";
 
 interface ChartEditorProps {
   type: ChartType;
@@ -26,6 +27,14 @@ interface ChartEditorProps {
   onTypeChange: (type: ChartType) => void;
   onDataChange: (data: ChartData[] | LineChartData[] | Dataset[]) => void;
   onConfigChange: (config: ChartConfig) => void;
+  displayOptions: {
+    showChart: boolean;
+    showTable: boolean;
+    showTitle: boolean;
+    showFilter: boolean;
+    showSummary: boolean;
+  };
+  setDisplayOptions: (opts: any) => void;
 }
 
 const ChartEditor: React.FC<ChartEditorProps> = ({
@@ -35,6 +44,8 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
   onTypeChange,
   onDataChange,
   onConfigChange,
+  displayOptions,
+  setDisplayOptions,
 }) => {
   const [activeTab, setActiveTab] = useState<"data" | "style" | "settings">(
     "data"
@@ -150,6 +161,9 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
       fontSize: 14,
       borderRadius: 4,
       strokeWidth: 3,
+      checkboxData: function (checkboxData: any): unknown {
+        throw new Error("Function not implemented.");
+      }
     };
     onConfigChange(defaultConfig);
 
@@ -166,6 +180,9 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
   const changeChartColor = (e: React.ChangeEvent<HTMLInputElement>) => {
     const changeGradient: ChartConfig = {
       gradient: false,
+      checkboxData: function (checkboxData: any): unknown {
+        throw new Error("Function not implemented.");
+      }
     };
     const newColor = e.target.value;
     // Update config colors
@@ -243,17 +260,25 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
     },
   ];
 
+  const checklistOptions: { key: keyof typeof displayOptions; label: string }[] = [
+    { key: 'showChart', label: 'Chart' },
+    { key: 'showTable', label: 'Summary Table' },
+    { key: 'showTitle', label: 'Title' },
+    { key: 'showFilter', label: 'Filter' },
+    { key: 'showSummary', label: 'Summary Description' },
+  ];
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
       {/* Header */}
-      <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex items-center justify-between mb-4">
+      <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 font-['Figtree']">
             Chart Editor
           </h3>
           <button
             onClick={resetToDefaults}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors font-['Figtree']"
+            className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors font-['Figtree'] self-start sm:self-auto"
           >
             <RotateCcw size={14} />
             Reset
@@ -261,7 +286,7 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
         </div>
 
         {/* Chart Type Selector */}
-        <div className="grid grid-cols-5 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
           {chartTypes.map(({ value, label }) => (
             <button
               key={value}
@@ -279,29 +304,56 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-200 dark:border-gray-700">
+      <div
+        className="flex border-b border-gray-200 dark:border-gray-700 overflow-x-auto"
+        role="tablist"
+        aria-label="Chart Editor Tabs"
+      >
         {[
           { id: "data", label: "Data", icon: Plus },
           { id: "style", label: "Style", icon: Palette },
           { id: "settings", label: "Settings", icon: Settings },
-        ].map(({ id, label, icon: Icon }) => (
+        ].map(({ id, label, icon: Icon }, _idx, arr) => (
           <button
             key={id}
+            id={`chart-editor-tab-${id}`}
+            role="tab"
+            aria-selected={activeTab === id}
+            aria-controls={`chart-editor-panel-${id}`}
+            tabIndex={activeTab === id ? 0 : -1}
             onClick={() => setActiveTab(id as any)}
-            className={`flex items-center gap-2 px-6 py-3 text-sm font-medium transition-colors font-['Figtree'] ${
+            onKeyDown={e => {
+              // Arrow key navigation
+              if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+                e.preventDefault();
+                const currentIdx = arr.findIndex(t => t.id === activeTab);
+                let nextIdx =
+                  e.key === "ArrowRight"
+                    ? (currentIdx + 1) % arr.length
+                    : (currentIdx - 1 + arr.length) % arr.length;
+                setActiveTab(arr[nextIdx].id as any);
+              }
+            }}
+            className={`flex items-center gap-2 px-4 sm:px-6 py-3 text-sm font-medium transition-colors font-['Figtree'] whitespace-nowrap ${
               activeTab === id
                 ? "text-blue-600 border-b-2 border-blue-600"
                 : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
             }`}
           >
             <Icon size={16} />
-            {label}
+            <span className="hidden sm:inline">{label}</span>
           </button>
         ))}
       </div>
 
       {/* Tab Content */}
-      <div className="p-6">
+      <div
+        className="p-4 sm:p-6"
+        id={`chart-editor-panel-${activeTab}`}
+        role="tabpanel"
+        aria-labelledby={`chart-editor-tab-${activeTab}`}
+        tabIndex={0}
+      >
         {activeTab === "data" && (
           <div className="space-y-4">
             {/* Multi-Dataset Manager for Line/Area Charts */}
@@ -317,11 +369,11 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
             {/* Single Dataset or Non-Line/Area Charts */}
             {(!isMultiDataset || (type !== "line" && type !== "area")) && (
               <>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 font-['Figtree']">
                     Data Points
                   </h4>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <button
                       onClick={generateRandomData}
                       className="px-3 py-1.5 text-sm bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors font-['Figtree']"
@@ -351,9 +403,9 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
                   {data.map((item, index) => (
                     <div
                       key={index}
-                      className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                      className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
                     >
-                      <div className="flex-1 grid grid-cols-2 gap-3">
+                      <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
                         <input
                           type="text"
                           value={
@@ -396,6 +448,7 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
                       <button
                         onClick={() => removeDataPoint(index)}
                         className="p-2 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                        aria-label={`Remove data point ${index + 1}`}
                       >
                         <Trash2 size={16} />
                       </button>
@@ -804,9 +857,44 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
                 )}
               </div>
             </div>
+
+            <div className="mb-6">
+              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 font-['Figtree']">Show/Hide Elements</h4>
+              <div className="space-y-2">
+                {checklistOptions.map(opt => (
+                  <label key={opt.key} className="flex items-center gap-2 text-sm font-['Figtree']">
+                    <input
+                      type="checkbox"
+                      checked={displayOptions[opt.key]}
+                      onChange={e => setDisplayOptions({ ...displayOptions, [opt.key]: e.target.checked })}
+                      className="form-checkbox rounded text-blue-500 focus:ring-blue-500"
+                    />
+                    {opt.label}
+                  </label>
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </div>
+
+      {/* Define default values for title, kpiTitle, filter, summary */}
+      <CodeGenerator
+        type={type}
+        data={
+          // If multi-dataset, pass the first dataset's data, otherwise pass data directly
+          isMultiDataset
+            ? (data as Dataset[])[0]?.data ?? []
+            : (data as ChartData[] | LineChartData[])
+        }
+        config={config}
+        title={displayOptions.showTitle ? "Chart Title" : undefined}
+        kpiTitle={"KPI Title"}
+        filter={displayOptions.showFilter ? ["Filter Value"] : undefined}
+        summary={displayOptions.showSummary ? "Summary Description" : undefined}
+        showSummaryTable={displayOptions.showTable}
+        displayOptions={displayOptions} // pass the whole object if needed
+      />
     </div>
   );
 };

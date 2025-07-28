@@ -20,6 +20,7 @@ export interface Dataset {
 }
 
 export interface ChartConfig {
+  checkboxData(checkboxData: any): unknown;
   width?: number;
   height?: number;
   margin?: {
@@ -44,6 +45,11 @@ export interface ChartConfig {
   strokeWidth?: number;
   barBackgroundColor?: string;
   showBarBackground?: boolean;
+  // Added for code generation and prop passing
+  title?: string;
+  kpiTitle?: string;
+  filter?: string[];
+  type?: ChartType;
 }
 
 export type ChartType = 'line' | 'bar' | 'area' | 'pie' | 'donut';

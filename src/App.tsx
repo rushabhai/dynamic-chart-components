@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import CodePreviewPage from "./components/CodePreviewPage";
 import Chart from "./components/Chart";
 import ChartEditor from "./components/ChartEditor";
 import CodeGenerator from "./components/CodeGenerator";
@@ -58,6 +60,9 @@ const initialConfig: ChartConfig = {
   fontSize: 14,
   borderRadius: 4,
   strokeWidth: 3,
+  checkboxData: function (checkboxData: any): unknown {
+    throw new Error("Function not implemented.");
+  }
 };
 
 function AppContent() {
@@ -66,7 +71,7 @@ function AppContent() {
     initialBarData
   );
   const [chartConfig, setChartConfig] = useState<ChartConfig>(initialConfig);
-  const [chartTitle, setChartTitle] = useState("Interactive Chart");
+  const [chartTitle, setChartTitle] = useState("");
   const [kpiTitle, setKpiTitle] = useState("");
   const [filter, setFilter] = useState("");
   const [summary, setSummary] = useState<string>(
@@ -74,6 +79,33 @@ function AppContent() {
   );
   const [filterData, setFilterData] = useState<string[]>([]);
   const [activePanel, setActivePanel] = useState<"editor" | "code">("editor");
+  const [showSummaryInCode, setShowSummaryInCode] = useState(true);
+  const [displayOptions, setDisplayOptions] = useState({
+    showChart: true,
+    showTable: true,
+    showTitle: true,
+    showFilter: true,
+    showSummary: true,
+  });
+  // Remove inputWidth, inputHeight, handleResolutionChange, and Chart Resolution UI
+  // const [inputWidth, setInputWidth] = useState(chartConfig.width || 700);
+  // const [inputHeight, setInputHeight] = useState(chartConfig.height || 400);
+  // const handleResolutionChange = (w: number, h: number) => { ... };
+
+  // Remove Chart Resolution UI block
+  // <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 flex flex-col">
+  //   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 font-['Figtree']">
+  //     Chart Resolution
+  //   </label>
+  //   <div className="flex gap-2 items-center">
+  //     <input ... />
+  //     <span ... >x</span>
+  //     <input ... />
+  //     <span ... >px</span>
+  //   </div>
+  // </div>
+
+  // Pass config.width and config.height directly to the chart config
 
   const handleTypeChange = (newType: ChartType) => {
     setChartType(newType);
@@ -98,7 +130,16 @@ function AppContent() {
 
   const handleConfigChange = (newConfig: ChartConfig) => {
     setChartConfig(newConfig);
+    // if (newConfig.width) setInputWidth(newConfig.width); // Removed
+    // if (newConfig.height) setInputHeight(newConfig.height); // Removed
   };
+
+  // Remove handleResolutionChange
+  // const handleResolutionChange = (w: number, h: number) => {
+  //   setInputWidth(w);
+  //   setInputHeight(h);
+  //   setChartConfig((prev) => ({ ...prev, width: w, height: h }));
+  // };
 
   const addfilterData = () => {
     const newOption = prompt("Add new filter option:");
@@ -156,7 +197,7 @@ function AppContent() {
         </div>
 
         {/* Chart Title Editor */}
-        <div className="mb-8 flex gap-4 justify-center">
+        <div className="mb-6 lg:mb-8 flex flex-col sm:flex-row gap-4 justify-center">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 font-['Figtree']">
               Chart Title
@@ -185,12 +226,10 @@ function AppContent() {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 font-['Figtree']">
               Filter Options
             </label>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <select
                 name="filter"
                 id="filter"
-                // value={filter || "None"} // Remove value prop to make uncontrolled
-                // onChange handler removed
                 className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-['Figtree'] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 {filterData.map((option) => (
@@ -201,7 +240,7 @@ function AppContent() {
               </select>
               <button
                 onClick={addfilterData}
-                className="px-2 py-1 text-sm bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors font-['Figtree'] flex items-center gap-1"
+                className="px-3 py-2 text-sm bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors font-['Figtree'] flex items-center justify-center gap-1"
                 title="Add filter option"
               >
                 <Plus size={14} />
@@ -210,45 +249,50 @@ function AppContent() {
             </div>
             {/* List filter options with remove buttons */}
             {filterData.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
+              <div className="flex flex-wrap gap-2 mt-3">
                 {filterData.map((option) => (
-                  <span key={option} className="flex items-center bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-lg text-sm font-['Figtree']">
+                  <span key={option} className="flex items-center bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-lg text-sm font-['Figtree']">
                     {option}
                     <button
                       onClick={() => removefilterData(option)}
-                      className="ml-1 text-red-500 hover:text-red-700"
+                      className="ml-2 text-red-500 hover:text-red-700 p-1"
                       title={`Remove ${option}`}
                     >
-                      <X size={14} />
+                      <X size={12} />
                     </button>
                   </span>
                 ))}
               </div>
             )}
           </div>
+          {/* Resolution Inputs */}
+          {/* Removed Chart Resolution Inputs */}
         </div>
 
         {/* Main Layout */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           {/* Chart Display */}
-          <div className="xl:col-span-2">
-            <Chart
-              type={chartType}
-              data={chartData}
-              config={chartConfig}
-              title={chartTitle}
-              kpiTitle={kpiTitle}
-              filter={filterData} // Pass filterData as filter (expects string[])
-              filterData={filterData}
-              summary={summary}
-              editable={true}
-              onDataChange={handleDataChange}
-              onConfigChange={handleConfigChange}
-              className="mb-6"
-            />
+          <div className="lg:col-span-2">
+            {displayOptions.showChart && (
+              <Chart
+                type={chartType}
+                data={chartData}
+                config={{ ...chartConfig, width: chartConfig.width, height: chartConfig.height }}
+                title={displayOptions.showTitle ? chartTitle : undefined}
+                kpiTitle={kpiTitle}
+                filter={displayOptions.showFilter ? filterData : []}
+                filterData={displayOptions.showFilter ? filterData : []}
+                summary={displayOptions.showSummary ? summary : undefined}
+                editable={true}
+                onDataChange={handleDataChange}
+                onConfigChange={handleConfigChange}
+                className="mb-6"
+                showSummaryTable={displayOptions.showTable}
+              />
+            )}
 
             {/* Quick Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-6">
               <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-2 mb-1">
                   <TrendingUp className="w-4 h-4 text-blue-500" />
@@ -300,7 +344,7 @@ function AppContent() {
           </div>
 
           {/* Control Panel */}
-          <div className="space-y-6">
+          <div className="space-y-4 lg:space-y-6">
             {/* Panel Toggle */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-1">
               <div className="grid grid-cols-2 gap-1">
@@ -338,17 +382,34 @@ function AppContent() {
                 onTypeChange={handleTypeChange}
                 onDataChange={handleDataChange}
                 onConfigChange={handleConfigChange}
+                displayOptions={displayOptions}
+                setDisplayOptions={setDisplayOptions}
               />
             ) : (
-              <CodeGenerator
-                type={chartType}
-                data={chartData}
-                config={chartConfig}
-                title={chartTitle}
-                kpiTitle={kpiTitle}
-                filterData={filterData}
-                summary={summary}
-              />
+              <div>
+                <div className="flex items-center mb-4">
+                  <input
+                    id="show-summary-in-code"
+                    type="checkbox"
+                    checked={showSummaryInCode}
+                    onChange={e => setShowSummaryInCode(e.target.checked)}
+                    className="mr-2"
+                  />
+                  <label htmlFor="show-summary-in-code" className="text-sm text-gray-700 dark:text-gray-300 font-['Figtree']">
+                    Include summary and table in generated code
+                  </label>
+                </div>
+                <CodeGenerator
+                  type={chartType}
+                  data={chartData}
+                  config={chartConfig}
+                  title={chartTitle}
+                  kpiTitle={kpiTitle}
+                  filter={filterData}
+                  summary={summary}
+                  showSummaryTable={displayOptions.showTable}
+                />
+              </div>
             )}
           </div>
         </div>
@@ -409,10 +470,16 @@ function AppContent() {
   );
 }
 
+
 function App() {
   return (
     <ThemeProvider>
-      <AppContent />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<AppContent />} />
+          <Route path="/test" element={<CodePreviewPage />} />
+        </Routes>
+      </BrowserRouter>
     </ThemeProvider>
   );
 }
