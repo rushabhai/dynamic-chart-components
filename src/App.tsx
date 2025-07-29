@@ -471,17 +471,25 @@ function AppContent() {
 }
 
 
+// function App() {
+//   return (
+//     <ThemeProvider>
+//       <BrowserRouter>
+//         <Routes>
+//           <Route path="/" element={<AppContent />} />
+//           <Route path="/test" element={<CodePreviewPage />} />
+//         </Routes>
+//       </BrowserRouter>
+//     </ThemeProvider>
+//   );
+// }
+
+// export default App;
 function App() {
   return (
     <ThemeProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<AppContent />} />
-          <Route path="/test" element={<CodePreviewPage />} />
-        </Routes>
-      </BrowserRouter>
+      <AppContent />
     </ThemeProvider>
   );
 }
-
 export default App;
