@@ -69,12 +69,14 @@ const CodeGenerator: React.FC<CodeGeneratorProps> = ({
     const displayOptionsString = displayOptions ? ` displayOptions={${JSON.stringify(displayOptions)}}` : '';
 
     return `import React from 'react';
+import { Chart, ThemeProvider } from '@whysorush/dynamic-chart-component';
 
 const data = ${dataString};
 const config = ${configString};
 
 export default function GeneratedChart() {
   return (
+  <ThemeProvider>
     <Chart
       type={${typeString}}
       data={data}
@@ -83,6 +85,7 @@ export default function GeneratedChart() {
       showSummaryTable={${showSummaryTable ? 'true' : 'false'}}
       displayOptions={${displayOptions ? JSON.stringify(displayOptions) : 'undefined'}}
     />
+    <ThemeProvider>
   );
 }
 `;
