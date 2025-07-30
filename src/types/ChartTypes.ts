@@ -47,19 +47,19 @@ export interface ChartConfig {
   showBarBackground?: boolean;
   // Added for code generation and prop passing
   title?: string;
-  kpiTitle?: string;
+  selectedKPIs?: KPIType[];
   filter?: string[];
   type?: ChartType;
 }
 
-export type ChartType = 'line' | 'bar' | 'area' | 'pie' | 'donut';
+export type ChartType = "line" | "bar" | "area" | "pie" | "donut";
 
 export interface ChartProps {
   type: ChartType;
   data: ChartData[] | LineChartData[];
   config?: ChartConfig;
   title?: string;
-  kpiTitle?: string;
+  kpiData?: KPIOption[];
   filter?: string[];
   summary?: string;
   className?: string;
@@ -78,11 +78,27 @@ export interface EditableChartState {
 export interface ChartSummaryResponse {
   summary: string;
   updatedAt?: string;
-  status: 'success' | 'error';
+  status: "success" | "error";
 }
 
 export interface ChartSummaryState {
   summary: string;
   isLoading: boolean;
   error?: string;
+}
+
+export type KPIType =
+  | "sum"
+  | "max"
+  | "min"
+  | "avg"
+  | "count"
+  | "median"
+  | "range";
+
+export interface KPIOption {
+  type: KPIType;
+  label: string;
+  value: number;
+  formatted: string;
 }

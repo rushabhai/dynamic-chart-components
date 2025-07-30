@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import CodePreviewPage from "./components/CodePreviewPage";
 import Chart from "./components/Chart";
@@ -11,9 +11,12 @@ import {
   LineChartData,
   ChartType,
   ChartConfig,
+  KPIType,
+  KPIOption,
 } from "./types/ChartTypes";
 import { BarChart3, TrendingUp, Settings, Code, Plus, X } from "lucide-react";
 import { Dataset } from "./types/ChartTypes";
+import { calculateKPIs, getKPIByType } from "./utils/kpiCalculations";
 
 // Initial sample data
 const initialBarData: ChartData[] = [
@@ -62,7 +65,7 @@ const initialConfig: ChartConfig = {
   strokeWidth: 3,
   checkboxData: function (checkboxData: any): unknown {
     throw new Error("Function not implemented.");
-  }
+  },
 };
 
 function AppContent() {
@@ -72,12 +75,15 @@ function AppContent() {
   );
   const [chartConfig, setChartConfig] = useState<ChartConfig>(initialConfig);
   const [chartTitle, setChartTitle] = useState("");
-  const [kpiTitle, setKpiTitle] = useState("");
+  const [selectedKPITypes, setSelectedKPITypes] = useState<KPIType[]>([
+    "sum",
+    "avg",
+  ]);
   const [filter, setFilter] = useState("");
   const [summary, setSummary] = useState<string>(
     "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
   );
-  const [filterData, setFilterData] = useState<string[]>([]);
+  const [filterData, setFilterData] = useState<string[]>(["WEEKLY"]);
   const [activePanel, setActivePanel] = useState<"editor" | "code">("editor");
   const [showSummaryInCode, setShowSummaryInCode] = useState(true);
   const [displayOptions, setDisplayOptions] = useState({
@@ -159,6 +165,27 @@ function AppContent() {
     }
   };
 
+  // Calculate KPIs from current data
+  const kpiOptions = useMemo(
+    () => calculateKPIs(chartData, chartType),
+    [chartData, chartType]
+  );
+  const selectedKPIs = useMemo(
+    () =>
+      selectedKPITypes
+        .map((type) => getKPIByType(kpiOptions, type))
+        .filter(Boolean) as KPIOption[],
+    [kpiOptions, selectedKPITypes]
+  );
+
+  const handleKPIToggle = (kpiType: KPIType) => {
+    setSelectedKPITypes((prev) =>
+      prev.includes(kpiType)
+        ? prev.filter((type) => type !== kpiType)
+        : [...prev, kpiType]
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300">
       {/* Header */}
@@ -210,18 +237,32 @@ function AppContent() {
               placeholder="Enter chart title..."
             />
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+
+          {/* Multiple KPI Selector */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 min-w-[200px]">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 font-['Figtree']">
-              Component Chart Title
+              Select KPI Metrics
             </label>
-            <input
-              type="text"
-              value={kpiTitle}
-              onChange={(e) => setKpiTitle(e.target.value)}
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-['Figtree'] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter title..."
-            />
+            <div className="space-y-2 max-h-20 overflow-y-auto">
+              {kpiOptions.map((kpi) => (
+                <label
+                  key={kpi.type}
+                  className="flex items-center gap-2 text-sm font-['Figtree']"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedKPITypes.includes(kpi.type)}
+                    onChange={() => handleKPIToggle(kpi.type)}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-gray-700 dark:text-gray-300">
+                    {kpi.label}: {kpi.formatted}
+                  </span>
+                </label>
+              ))}
+            </div>
           </div>
+
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 flex flex-col">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 font-['Figtree']">
               Filter Options
@@ -251,7 +292,10 @@ function AppContent() {
             {filterData.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-3">
                 {filterData.map((option) => (
-                  <span key={option} className="flex items-center bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-lg text-sm font-['Figtree']">
+                  <span
+                    key={option}
+                    className="flex items-center bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-lg text-sm font-['Figtree']"
+                  >
                     {option}
                     <button
                       onClick={() => removefilterData(option)}
@@ -277,9 +321,13 @@ function AppContent() {
               <Chart
                 type={chartType}
                 data={chartData}
-                config={{ ...chartConfig, width: chartConfig.width, height: chartConfig.height }}
+                config={{
+                  ...chartConfig,
+                  width: chartConfig.width,
+                  height: chartConfig.height,
+                }}
                 title={displayOptions.showTitle ? chartTitle : undefined}
-                kpiTitle={kpiTitle}
+                kpiData={selectedKPIs}
                 filter={displayOptions.showFilter ? filterData : []}
                 filterData={displayOptions.showFilter ? filterData : []}
                 summary={displayOptions.showSummary ? summary : undefined}
@@ -384,6 +432,8 @@ function AppContent() {
                 onConfigChange={handleConfigChange}
                 displayOptions={displayOptions}
                 setDisplayOptions={setDisplayOptions}
+                 selectedKPITypes={selectedKPITypes} 
+                 onKPITypesChange={setSelectedKPITypes} 
               />
             ) : (
               <div>
@@ -392,10 +442,13 @@ function AppContent() {
                     id="show-summary-in-code"
                     type="checkbox"
                     checked={showSummaryInCode}
-                    onChange={e => setShowSummaryInCode(e.target.checked)}
+                    onChange={(e) => setShowSummaryInCode(e.target.checked)}
                     className="mr-2"
                   />
-                  <label htmlFor="show-summary-in-code" className="text-sm text-gray-700 dark:text-gray-300 font-['Figtree']">
+                  <label
+                    htmlFor="show-summary-in-code"
+                    className="text-sm text-gray-700 dark:text-gray-300 font-['Figtree']"
+                  >
                     Include summary and table in generated code
                   </label>
                 </div>
@@ -404,7 +457,7 @@ function AppContent() {
                   data={chartData}
                   config={chartConfig}
                   title={chartTitle}
-                  kpiTitle={kpiTitle}
+                  kpiData={selectedKPIs}
                   filter={filterData}
                   summary={summary}
                   showSummaryTable={displayOptions.showTable}
@@ -469,7 +522,6 @@ function AppContent() {
     </div>
   );
 }
-
 
 // function App() {
 //   return (

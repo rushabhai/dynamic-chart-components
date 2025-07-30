@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Plus,
   Palette,
@@ -14,11 +14,14 @@ import {
   Dataset,
   ChartConfig,
   ChartType,
+  KPIType,
+  KPIOption,
 } from "../types/ChartTypes";
 import { useTheme } from "../context/ThemeContext";
 import DatasetManager from "./DatasetManager";
 import Chart from "./Chart";
 import CodeGenerator from "./CodeGenerator";
+import { calculateKPIs, getKPIByType } from "../utils/kpiCalculations";
 
 interface ChartEditorProps {
   type: ChartType;
@@ -35,6 +38,8 @@ interface ChartEditorProps {
     showSummary: boolean;
   };
   setDisplayOptions: (opts: any) => void;
+  selectedKPITypes?: KPIType[];
+  onKPITypesChange?: (types: KPIType[]) => void;
 }
 
 const ChartEditor: React.FC<ChartEditorProps> = ({
@@ -43,12 +48,22 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
   config,
   onTypeChange,
   onDataChange,
+  selectedKPITypes = ["sum"],
+  onKPITypesChange,
   onConfigChange,
   displayOptions,
   setDisplayOptions,
 }) => {
   const [activeTab, setActiveTab] = useState<"data" | "style" | "settings">(
     "data"
+  );
+  const kpiOptions = useMemo(() => calculateKPIs(data, type), [data, type]);
+  const selectedKPIs = useMemo(
+    () =>
+      selectedKPITypes
+        .map((type) => getKPIByType(kpiOptions, type))
+        .filter(Boolean) as KPIOption[],
+    [kpiOptions, selectedKPITypes]
   );
   const { isDark } = useTheme();
 
@@ -80,6 +95,13 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
     };
 
     onDataChange([singleDataset]);
+  };
+
+  const handleKPIToggle = (kpiType: KPIType) => {
+    const newTypes = selectedKPITypes.includes(kpiType)
+      ? selectedKPITypes.filter((type) => type !== kpiType)
+      : [...selectedKPITypes, kpiType];
+    onKPITypesChange?.(newTypes);
   };
 
   const addDataPoint = () => {
@@ -163,7 +185,7 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
       strokeWidth: 3,
       checkboxData: function (checkboxData: any): unknown {
         throw new Error("Function not implemented.");
-      }
+      },
     };
     onConfigChange(defaultConfig);
 
@@ -182,12 +204,13 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
       gradient: false,
       checkboxData: function (checkboxData: any): unknown {
         throw new Error("Function not implemented.");
-      }
+      },
     };
     const newColor = e.target.value;
     // Update config colors
     onConfigChange({
-      ...config, ...changeGradient,
+      ...config,
+      ...changeGradient,
       colors: [newColor, ...Array(9).fill(newColor)], // Create array of same color
     });
 
@@ -260,12 +283,15 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
     },
   ];
 
-  const checklistOptions: { key: keyof typeof displayOptions; label: string }[] = [
-    { key: 'showChart', label: 'Chart' },
-    { key: 'showTable', label: 'Summary Table' },
-    { key: 'showTitle', label: 'Title' },
-    { key: 'showFilter', label: 'Filter' },
-    { key: 'showSummary', label: 'Summary Description' },
+  const checklistOptions: {
+    key: keyof typeof displayOptions;
+    label: string;
+  }[] = [
+    { key: "showChart", label: "Chart" },
+    { key: "showTable", label: "Summary Table" },
+    { key: "showTitle", label: "Title" },
+    { key: "showFilter", label: "Filter" },
+    { key: "showSummary", label: "Summary Description" },
   ];
 
   return (
@@ -322,11 +348,11 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
             aria-controls={`chart-editor-panel-${id}`}
             tabIndex={activeTab === id ? 0 : -1}
             onClick={() => setActiveTab(id as any)}
-            onKeyDown={e => {
+            onKeyDown={(e) => {
               // Arrow key navigation
               if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
                 e.preventDefault();
-                const currentIdx = arr.findIndex(t => t.id === activeTab);
+                const currentIdx = arr.findIndex((t) => t.id === activeTab);
                 let nextIdx =
                   e.key === "ArrowRight"
                     ? (currentIdx + 1) % arr.length
@@ -711,6 +737,40 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
 
         {activeTab === "settings" && (
           <div className="space-y-6">
+            {/* Multiple KPI Selection */}
+            <div>
+              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 font-['Figtree']">
+                KPI Metrics
+              </h4>
+              <div className="space-y-2 max-h-48 overflow-y-auto bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                {kpiOptions.map((kpi) => (
+                  <label
+                    key={kpi.type}
+                    className="flex items-center gap-3 text-sm font-['Figtree'] cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 p-2 rounded"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedKPITypes.includes(kpi.type)}
+                      onChange={() => handleKPIToggle(kpi.type)}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <div className="flex-1">
+                      <div className="font-medium text-gray-900 dark:text-gray-100">
+                        {kpi.label}
+                      </div>
+                      <div className="text-gray-600 dark:text-gray-400">
+                        {kpi.formatted}
+                      </div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+              {selectedKPIs.length === 0 && (
+                <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
+                  Select at least one KPI to display
+                </p>
+              )}
+            </div>
             {/* Dimensions */}
             <div>
               <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 font-['Figtree']">
@@ -859,14 +919,24 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
             </div>
 
             <div className="mb-6">
-              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 font-['Figtree']">Show/Hide Elements</h4>
+              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 font-['Figtree']">
+                Show/Hide Elements
+              </h4>
               <div className="space-y-2">
-                {checklistOptions.map(opt => (
-                  <label key={opt.key} className="flex items-center gap-2 text-sm font-['Figtree']">
+                {checklistOptions.map((opt) => (
+                  <label
+                    key={opt.key}
+                    className="flex items-center gap-2 text-sm font-['Figtree']"
+                  >
                     <input
                       type="checkbox"
                       checked={displayOptions[opt.key]}
-                      onChange={e => setDisplayOptions({ ...displayOptions, [opt.key]: e.target.checked })}
+                      onChange={(e) =>
+                        setDisplayOptions({
+                          ...displayOptions,
+                          [opt.key]: e.target.checked,
+                        })
+                      }
                       className="form-checkbox rounded text-blue-500 focus:ring-blue-500"
                     />
                     {opt.label}
@@ -889,7 +959,7 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
         }
         config={config}
         title={displayOptions.showTitle ? "Chart Title" : undefined}
-        kpiTitle={"KPI Title"}
+        kpiData={selectedKPIs}
         filter={displayOptions.showFilter ? ["Filter Value"] : undefined}
         summary={displayOptions.showSummary ? "Summary Description" : undefined}
         showSummaryTable={displayOptions.showTable}

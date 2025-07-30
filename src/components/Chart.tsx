@@ -5,6 +5,7 @@ import {
   LineChartData,
   Dataset,
   EditableChartState,
+  KPIOption,
 } from "../types/ChartTypes";
 import { useTheme } from "../context/ThemeContext";
 import { Edit3, Check, X } from "lucide-react";
@@ -12,14 +13,18 @@ import DataActions from "./DataActions";
 import ChartSummaryTable from "./ChartSummaryTable";
 
 // Add filterData to props
-type ChartPropsWithFilterData = ChartProps & { filterData?: string[]; showSummaryTable?: boolean };
+type ChartPropsWithFilterData = ChartProps & {
+  filterData?: string[];
+  showSummaryTable?: boolean;
+   kpiData?: KPIOption[];
+};
 
 const Chart: React.FC<ChartPropsWithFilterData> = ({
   type,
   data,
   config = {},
   title,
-  kpiTitle,
+  kpiData = [],
   filterData = [],
   summary,
   className = "",
@@ -1127,12 +1132,19 @@ const Chart: React.FC<ChartPropsWithFilterData> = ({
   };
 
   // Use config.width and config.height directly, with responsive fallbacks
-  const chartWidth = typeof config.width === 'number' ? config.width : 700;
-  const chartHeight = typeof config.height === 'number' ? config.height : 500;
-  
+  const cfg = config as { width?: number; height?: number };
+  const chartWidth = typeof cfg.width === "number" ? cfg.width : 700;
+  const chartHeight = typeof cfg.height === "number" ? cfg.height : 500;
+
   // Responsive sizing
-  const responsiveWidth = typeof chartWidth === 'number' ? Math.min(chartWidth, window.innerWidth - 48) : '100%';
-  const responsiveHeight = typeof chartHeight === 'number' ? Math.min(chartHeight, window.innerHeight * 0.6) : 'auto';
+  const responsiveWidth =
+    typeof chartWidth === "number"
+      ? Math.min(chartWidth, window.innerWidth - 48)
+      : "100%";
+  const responsiveHeight =
+    typeof chartHeight === "number"
+      ? Math.min(chartHeight, window.innerHeight * 0.6)
+      : "auto";
 
   // Only show summary table if explicitly true
   const showSummaryTable = propShowSummaryTable === true;
@@ -1143,19 +1155,19 @@ const Chart: React.FC<ChartPropsWithFilterData> = ({
       aria-label={title ? `Chart: ${title}` : "Chart visualization"}
       aria-describedby={summary ? "chart-summary" : undefined}
       style={{
-        width: '100%',
+        width: "100%",
         maxWidth: responsiveWidth,
         minHeight: responsiveHeight,
-        border: '2px solid #e5e7eb',
+        border: "2px solid #e5e7eb",
         borderRadius: 12,
-        background: 'white',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-        padding: '0',
-        position: 'relative',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '16px',
-        overflow: 'hidden',
+        background: "white",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+        padding: "0",
+        position: "relative",
+        display: "flex",
+        flexDirection: "column",
+        gap: "16px",
+        overflow: "hidden",
       }}
       className={`${className} p-4 sm:p-6`}
     >
@@ -1167,20 +1179,38 @@ const Chart: React.FC<ChartPropsWithFilterData> = ({
             {title}
           </h3>
         )}
-        {/* KPI Title and Filter Row */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-          {kpiTitle && (
-            <span className="text-sm font-semibold border px-3 py-2 rounded-lg text-gray-600 dark:text-gray-300 font-['Figtree'] bg-gray-50 dark:bg-gray-800">
-              {kpiTitle}
-            </span>
+        {/* Multiple KPI Cards and Filter Row */}
+        <div className="flex justify-between gap-3">
+          {/* KPI Cards Row */}
+          {kpiData.length > 0 && (
+            <div className="flex flex-wrap gap-3">
+              {kpiData.map((kpi, index) => {
+                return (
+                  <div 
+                    key={kpi.type}
+                    className="bg-gradient-to-r border rounded-xl p-4 min-w-[160px] flex-1 max-w-[200px]"
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400 font-['Figtree']">
+                        {kpi.label}
+                      </span>
+                      <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 px-2 py-1 rounded-full font-medium">
+                        ▲ 100%
+                      </span>
+                    </div>
+                    <div className="text-xl font-bold text-gray-900 dark:text-gray-100 font-['Figtree']">
+                      {kpi.formatted}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
+
           {/* Filter Dropdown */}
           {filterData && filterData.length > 0 && (
             <div className="flex flex-col">
-              <label
-                htmlFor="chart-filter"
-                className="sr-only"
-              >
+              <label htmlFor="chart-filter" className="sr-only">
                 Filter Options
               </label>
               <select
@@ -1201,7 +1231,9 @@ const Chart: React.FC<ChartPropsWithFilterData> = ({
       </div>
 
       {/* Chart Canvas */}
-      <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+      <div
+        style={{ width: "100%", display: "flex", justifyContent: "center" }}
+      >
         <canvas
           ref={canvasRef}
           width={defaultConfig.width}
@@ -1210,12 +1242,12 @@ const Chart: React.FC<ChartPropsWithFilterData> = ({
             width: responsiveWidth,
             height: responsiveHeight,
             borderRadius: 8,
-            background: isDark ? '#1f2937' : '#fff',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-            outline: 'none',
+            background: isDark ? "#1f2937" : "#fff",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+            outline: "none",
           }}
           tabIndex={0}
-          aria-label={title ? `Chart: ${title}` : 'Chart visualization'}
+          aria-label={title ? `Chart: ${title}` : "Chart visualization"}
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
         />
@@ -1231,25 +1263,23 @@ const Chart: React.FC<ChartPropsWithFilterData> = ({
       )}
 
       {/* Summary Table */}
-      {showSummaryTable && (
-        <ChartSummaryTable data={data} />
-      )}
+      {showSummaryTable && <ChartSummaryTable data={data} />}
 
       {/* Tooltip */}
       {tooltip && (
         <div
           style={{
-            position: 'fixed',
+            position: "fixed",
             left: tooltip.x + 12,
             top: tooltip.y + 12,
-            background: 'rgba(0,0,0,0.85)',
-            color: '#fff',
-            padding: '8px 12px',
+            background: "rgba(0,0,0,0.85)",
+            color: "#fff",
+            padding: "8px 12px",
             borderRadius: 8,
             fontSize: 13,
             zIndex: 9999,
-            pointerEvents: 'none',
-            whiteSpace: 'pre-line',
+            pointerEvents: "none",
+            whiteSpace: "pre-line",
             maxWidth: 320,
           }}
           role="tooltip"
@@ -1258,7 +1288,7 @@ const Chart: React.FC<ChartPropsWithFilterData> = ({
         </div>
       )}
     </div>
- );
+  );
 };
 
 export default Chart;
