@@ -960,7 +960,6 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
         config={config}
         title={displayOptions.showTitle ? "Chart Title" : undefined}
         kpiData={selectedKPIs}
-        filter={displayOptions.showFilter ? ["Filter Value"] : undefined}
         summary={displayOptions.showSummary ? "Summary Description" : undefined}
         showSummaryTable={displayOptions.showTable}
         displayOptions={displayOptions} // pass the whole object if needed

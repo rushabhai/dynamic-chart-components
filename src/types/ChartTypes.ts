@@ -60,7 +60,8 @@ export interface ChartProps {
   config?: ChartConfig;
   title?: string;
   kpiData?: KPIOption[];
-  filter?: string[];
+  selectedFilter?: string;
+  filterOptions?: string[];
   summary?: string;
   className?: string;
   onDataChange?: (data: ChartData[] | LineChartData[]) => void;

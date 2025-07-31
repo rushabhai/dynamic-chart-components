@@ -14,7 +14,8 @@ import ChartSummaryTable from "./ChartSummaryTable";
 
 // Add filterData to props
 type ChartPropsWithFilterData = ChartProps & {
-  filterData?: string[];
+  selectedFilter?: string;
+  filterOptions?: string[];
   showSummaryTable?: boolean;
    kpiData?: KPIOption[];
 };
@@ -25,7 +26,8 @@ const Chart: React.FC<ChartPropsWithFilterData> = ({
   config = {},
   title,
   kpiData = [],
-  filterData = [],
+    selectedFilter, 
+   filterOptions = [],
   summary,
   className = "",
   onDataChange,
@@ -74,6 +76,8 @@ const Chart: React.FC<ChartPropsWithFilterData> = ({
     strokeWidth: 3,
     ...config,
   };
+
+  // console.log("selected filter: ", filterData)
 
   // Check if we have multi-dataset for line/area charts
   const isMultiDataset =
@@ -1208,18 +1212,16 @@ const Chart: React.FC<ChartPropsWithFilterData> = ({
           )}
 
           {/* Filter Dropdown */}
-          {filterData && filterData.length > 0 && (
+          {filterOptions  && filterOptions .length > 0 && (
             <div className="flex flex-col">
-              <label htmlFor="chart-filter" className="sr-only">
-                Filter Options
-              </label>
               <select
                 id="chart-filter"
                 aria-label="Filter Options"
+                value={selectedFilter  || filterOptions [0]}
                 className="text-sm font-semibold border px-3 py-2 rounded-lg text-gray-600 dark:text-gray-300 font-['Figtree'] bg-white dark:bg-gray-800 min-w-[120px]"
                 tabIndex={0}
               >
-                {filterData.map((option) => (
+                {filterOptions.map((option) => (
                   <option key={option} value={option}>
                     {option}
                   </option>

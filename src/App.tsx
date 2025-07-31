@@ -79,7 +79,7 @@ function AppContent() {
     "sum",
     "avg",
   ]);
-  const [filter, setFilter] = useState("");
+  const [filter, setFilter] = useState("WEEKLY");
   const [summary, setSummary] = useState<string>(
     "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
   );
@@ -112,6 +112,8 @@ function AppContent() {
   // </div>
 
   // Pass config.width and config.height directly to the chart config
+  console.log("filter a: ", filter);
+  console.log("filterData a: ", filterData);
 
   const handleTypeChange = (newType: ChartType) => {
     setChartType(newType);
@@ -271,6 +273,8 @@ function AppContent() {
               <select
                 name="filter"
                 id="filter"
+                value={filter} // Add this line
+                onChange={(e) => setFilter(e.target.value)} // Add this line
                 className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-['Figtree'] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 {filterData.map((option) => (
@@ -328,8 +332,8 @@ function AppContent() {
                 }}
                 title={displayOptions.showTitle ? chartTitle : undefined}
                 kpiData={selectedKPIs}
-                filter={displayOptions.showFilter ? filterData : []}
-                filterData={displayOptions.showFilter ? filterData : []}
+                selectedFilter={displayOptions.showFilter ? filter : undefined}
+                filterOptions={displayOptions.showFilter ? filterData : []}
                 summary={displayOptions.showSummary ? summary : undefined}
                 editable={true}
                 onDataChange={handleDataChange}
@@ -432,8 +436,8 @@ function AppContent() {
                 onConfigChange={handleConfigChange}
                 displayOptions={displayOptions}
                 setDisplayOptions={setDisplayOptions}
-                 selectedKPITypes={selectedKPITypes} 
-                 onKPITypesChange={setSelectedKPITypes} 
+                selectedKPITypes={selectedKPITypes}
+                onKPITypesChange={setSelectedKPITypes}
               />
             ) : (
               <div>
@@ -458,7 +462,8 @@ function AppContent() {
                   config={chartConfig}
                   title={chartTitle}
                   kpiData={selectedKPIs}
-                  filter={filterData}
+                  selectedFilter={filter}
+                  filterOptions={filterData}
                   summary={summary}
                   showSummaryTable={displayOptions.showTable}
                 />

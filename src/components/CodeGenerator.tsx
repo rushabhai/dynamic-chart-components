@@ -15,7 +15,8 @@ interface CodeGeneratorProps {
   config: ChartConfig;
   title?: string;
   kpiData?: KPIOption[];
-  filter?: string[];
+   selectedFilter?: string;
+  filterOptions?: string[]; 
   summary?: string;
   showSummaryTable?: boolean;
   displayOptions?: {
@@ -33,13 +34,16 @@ const CodeGenerator: React.FC<CodeGeneratorProps> = ({
   config,
   title,
   kpiData = [],
-  filter,
+   selectedFilter,
+  filterOptions, 
   summary,
   showSummaryTable,
   displayOptions,
 }) => {
   const [copied, setCopied] = useState(false);
   const { isDark } = useTheme();
+
+  console.log("filter data: ", filterOptions);
 
   // Generate summary table rows for bar, pie, donut
   const getSummaryRows = () => {
@@ -80,10 +84,8 @@ const CodeGenerator: React.FC<CodeGeneratorProps> = ({
       kpiData.length > 0
         ? ` kpiTypes={${JSON.stringify(kpiData.map((kpi) => kpi.type))}}`
         : "";
-    const filterString =
-      displayOptions?.showFilter && filter
-        ? ` filter={${JSON.stringify(filter)}}`
-        : "";
+     const selectedFilterString = selectedFilter ? ` filter="${selectedFilter}"` : "";
+    const filterOptionsString = filterOptions ? ` filterOptions={${JSON.stringify(filterOptions)}}` : "";
     const summaryString =
       displayOptions?.showSummary && summary
         ? ` summary={${JSON.stringify(summary)}}`
@@ -108,7 +110,7 @@ export default function GeneratedChart() {
     <Chart
       type={${typeString}}
       data={data}
-       config={config}${titleString}${kpiTypesString}${filterString}
+      config={config}${titleString}${kpiTypesString}${selectedFilterString}
       summary={${summary ? JSON.stringify(summary) : "undefined"}}
       showSummaryTable={${showSummaryTable ? "true" : "false"}}
       displayOptions={${
